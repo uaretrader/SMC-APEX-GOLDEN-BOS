@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SMC APEX v13.0.0 | GOLDEN STANDARD + LIQUIDITY SWEEP</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root { 
+            --bg: #010101; 
+            --accent: #00ffaa; 
+            --gold: #ffcc00; 
+            --danger: #ff4757; 
+            --blue: #00d4ff; 
+            --purple: #aa66ff;
+            --orange: #ff884d;
+            --border: rgba(0, 255, 170, 0.2);
+            --silver-bright: #e0e0e0; 
+            --silver-medium: #c0c0c0; 
+            --silver-dark: #a9a9a9;
+            --gold-dim: rgba(255, 204, 0, 0.12);
+            --card-bg: #050505;
+        }
+
+        body { 
+            font-family: 'Space Grotesk', sans-serif; 
+            background: #000; 
+            color: var(--silver-bright); 
+            height: 100vh; 
+            width: 100vw; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .app-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .terminal-container { 
+            width: 100%; 
+            background: var(--bg); 
+            position: relative; 
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        /* HEADER - rata kiri */
+        .header { 
+            padding: 12px 18px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid var(--border); 
+            background: #000;
+        }
+        .brand-container { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: flex-start;
+            text-align: left;
+        }
+        .brand { font-weight: 900; font-size: 0.85rem; letter-spacing: 2px; color: var(--accent); text-align: left; }
+        .meta-label-sub { font-size: 0.55rem; color: var(--silver-dark); letter-spacing: 3px; font-family: 'JetBrains Mono'; font-weight: 800; text-align: left; }
+        #sys-status { font-family: 'JetBrains Mono'; font-size: 0.65rem; font-weight: 800; border-left: 2px solid var(--gold); padding-left: 8px; transition: all 0.2s; }
+
+        /* NAV SECTION - rata kiri */
+        .nav-section { 
+            display: flex; 
+            gap: 8px; 
+            padding: 12px 16px; 
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            background: #000;
+        }
+        .nav-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-tab { 
+            background: #080808; 
+            border: 1px solid #1f1f1f; 
+            color: var(--silver-dark); 
+            padding: 7px 14px; 
+            border-radius: 6px; 
+            font-size: 0.7rem; 
+            font-weight: 800; 
+            cursor: pointer; 
+            font-family: 'JetBrains Mono'; 
+            transition: 0.2s;
+            letter-spacing: 0.3px;
+        }
+        .btn-tab.active { 
+            border-color: var(--accent); 
+            color: var(--accent); 
+            background: rgba(0, 255, 170, 0.08);
+            box-shadow: 0 0 8px rgba(0, 255, 170, 0.25);
+        }
+
+        /* HERO DISPLAY - semua rata kiri */
+        .hero-display { 
+            padding: 8px 20px 20px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: flex-start;
+            width: 100%; 
+        }
+        .hero-meta-row { 
+            display: flex; 
+            justify-content: flex-start;
+            align-items: center;
+            gap: 16px;
+            width: 100%; 
+            margin-bottom: 12px; 
+            font-family: 'JetBrains Mono'; 
+            font-weight: 800; 
+            font-size: 0.65rem;
+            letter-spacing: 0.5px;
+            flex-wrap: wrap;
+        }
+        .meta-bias span, .meta-fvg span { font-weight: 800; }
+        .liquidity-status {
+            background: rgba(0,0,0,0.6);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.6rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono';
+            border: 1px solid var(--gold-dim);
+        }
+        .liquidity-status.sweep {
+            border-color: var(--orange);
+            color: var(--orange);
+            animation: pulse 0.5s ease;
+        }
+        .liquidity-status.bos {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        @keyframes pulse {
+            0% { opacity: 0.5; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        #live-price { 
+            font-family: 'JetBrains Mono'; 
+            font-size: 3.6rem; 
+            font-weight: 800; 
+            letter-spacing: -2px; 
+            color: #fff; 
+            line-height: 1; 
+            cursor: pointer; 
+            transition: color 0.08s linear;
+            word-break: break-word;
+            text-align: left;
+            width: 100%;
+        }
+        .price-decimal { color: var(--accent); opacity: 0.7; font-size: 2.2rem; }
+
+        /* DATA GRID - semua rata kiri */
+        .data-grid { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            width: 100%; 
+            background: #0b0b0b; 
+            border-top: 1px solid var(--border); 
+            border-bottom: 1px solid var(--border); 
+        }
+        .data-item { 
+            background: var(--bg); 
+            padding: 12px 4px; 
+            text-align: left;
+            padding-left: 12px;
+            border-right: 1px solid rgba(255,255,255,0.03);
+            transition: background 0.1s;
+            cursor: pointer;
+        }
+        .data-item:active { background: #111; }
+        .data-label { 
+            font-size: 0.45rem; 
+            color: var(--silver-medium); 
+            text-transform: uppercase; 
+            margin-bottom: 6px; 
+            display: block; 
+            font-weight: 700; 
+            letter-spacing: 0.8px;
+            text-align: left;
+        }
+        .data-val { 
+            font-family: 'JetBrains Mono'; 
+            font-size: 0.85rem; 
+            color: #fff; 
+            font-weight: 800;
+            text-align: left;
+        }
+        .fvg-highlight {
+            animation: fvgPulse 0.8s ease 2;
+            text-shadow: 0 0 8px var(--accent);
+        }
+        @keyframes fvgPulse {
+            0% { text-shadow: 0 0 0 var(--accent); }
+            100% { text-shadow: 0 0 12px var(--accent); }
+        }
+
+        /* TERMINAL BOX - semua rata kiri */
+        .terminal-box { padding: 14px 16px; width: 100%; }
+        .card { 
+            background: var(--card-bg); 
+            border: 1px solid #151515; 
+            border-radius: 14px; 
+            padding: 14px; 
+            backdrop-filter: blur(2px);
+        }
+        
+        /* Profit row - rata kiri */
+        .profit-row { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 12px; 
+            margin-bottom: 14px;
+            text-align: left;
+        }
+        .profit-box { 
+            background: rgba(0,0,0,0.6); 
+            border: 1px solid #1c1c1c; 
+            padding: 12px 5px; 
+            border-radius: 12px; 
+            text-align: left;
+            padding-left: 12px;
+            cursor: pointer; 
+            transition: 0.1s; 
+        }
+        .profit-box:active { background: #111; }
+        .profit-box .data-label { text-align: left; }
+        .p-val { 
+            font-family: 'JetBrains Mono'; 
+            font-size: 1rem; 
+            font-weight: 800; 
+            letter-spacing: 0.5px;
+            text-align: left;
+        }
+
+        /* RSI Panel - rata kiri */
+        .rsi-panel { 
+            margin-top: 6px; 
+            padding: 12px 12px; 
+            border: 1px solid var(--gold-dim); 
+            border-radius: 14px; 
+            background: rgba(0, 0, 0, 0.4);
+            text-align: left;
+        }
+        .rsi-meta { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 8px; 
+        }
+        .rsi-tag { 
+            font-size: 0.55rem; 
+            font-weight: 900; 
+            color: var(--silver-dark); 
+            font-family: 'JetBrains Mono'; 
+            letter-spacing: 1px; 
+            text-align: left;
+        }
+        #rsi-val { 
+            font-family: 'JetBrains Mono'; 
+            font-size: 0.9rem; 
+            font-weight: 800; 
+            color: var(--silver-bright);
+            text-align: right;
+        }
+        .rsi-track { 
+            height: 3px; 
+            background: #2a2a2a; 
+            border-radius: 10px; 
+            overflow: hidden; 
+            margin-top: 6px; 
+        }
+        #rsi-bar { 
+            height: 100%; 
+            width: 0%; 
+            background: var(--silver-medium);
+            transition: width 0.2s ease, background 0.2s; 
+        }
+
+        /* FOOTER - rata kiri */
+        .footer { 
+            padding: 12px 18px; 
+            border-top: 1px solid #111; 
+            background: #000; 
+            display: flex; 
+            justify-content: flex-start;
+            align-items: center; 
+            font-size: 0.55rem; 
+            font-family: 'JetBrains Mono'; 
+            color: var(--silver-dark);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .footer-left { 
+            display: flex; 
+            gap: 12px; 
+            align-items: center;
+            text-align: left;
+        }
+        #session-module { 
+            color: var(--gold); 
+            font-weight: 800;
+            background: #080808;
+            padding: 4px 8px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+        }
+        #date-display { 
+            color: var(--silver-bright);
+            background: #080808;
+            padding: 4px 8px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+        }
+        #clock-module { 
+            color: #fff; 
+            font-weight: 800; 
+            background: #080808; 
+            padding: 4px 8px; 
+            border-radius: 20px; 
+            letter-spacing: 1px; 
+        }
+
+        .syncing { opacity: 0.75; transition: opacity 0.2s; }
+        .copied { color: #fff !important; text-shadow: 0 0 8px var(--accent); transition: 0.1s; }
+        .toast-msg {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a1a;
+            color: var(--accent);
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono';
+            z-index: 999;
+            pointer-events: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--accent);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        @keyframes flashPrice {
+            0% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        .price-flash { animation: flashPrice 0.08s 2; }
+    </style>
+</head>
+<body>
+<div class="app-wrapper" id="appWrapper">
+    <div class="terminal-container" id="main-terminal">
+        <header class="header">
+            <div class="brand-container">
+                <div class="brand">SMC_APEX v13.0.0</div>
+                <div class="meta-label-sub">LIQUIDITY SWEEP + BOS ENGINE</div>
+            </div>
+            <div id="sys-status" style="color: var(--gold)">INIT...</div>
+        </header>
+
+        <nav class="nav-section">
+            <div class="nav-group">
+                <button class="btn-tab" data-pair="XAUUSDT" id="btn-XAUUSDT">XAUUSD</button>
+                <button class="btn-tab" data-pair="BTCUSDT" id="btn-BTCUSDT">BTCUSD</button>
+            </div>
+            <div class="nav-group">
+                <button class="btn-tab" data-tf="5m" id="tf-5m">M5</button>
+                <button class="btn-tab" data-tf="15m" id="tf-15m">M15</button>
+                <button class="btn-tab" data-tf="1h" id="tf-1h">H1</button>
+            </div>
+        </nav>
+
+        <main class="hero-display">
+            <div class="hero-meta-row">
+                <div class="meta-bias">BIAS: <span id="pattern-val" style="color: var(--blue); font-weight:800">SCANNING</span></div>
+                <div class="liquidity-status" id="liquidity-status">⚡ AWAITING SWEEP</div>
+                <div class="meta-fvg" id="fvg-status" style="color: var(--blue); font-weight:800">FVG: ACTIVE</div>
+            </div>
+            <div id="live-price" onclick="smartCopy('live-price')">0.00</div>
+        </main>
+
+        <section class="data-grid">
+            <div class="data-item" onclick="smartCopy('r705')"><span class="data-label" style="color:var(--accent)">OTE (70.5%)</span><span class="data-val" id="r705" style="color:var(--accent)">0.00</span></div>
+            <div class="data-item" onclick="smartCopy('r618')"><span class="data-label" style="color:var(--gold)">GOLDEN (61.8%)</span><span class="data-val" id="r618" style="color:var(--gold)">0.00</span></div>
+            <div class="data-item" onclick="smartCopy('r79')"><span class="data-label" style="color:var(--blue)">DEEP (79.0%)</span><span class="data-val" id="r79" style="color:var(--blue)">0.00</span></div>
+            <div class="data-item" onclick="smartCopy('rSL')"><span class="data-label" style="color:var(--danger)">SL (PRECISION)</span><span class="data-val" id="rSL" style="color:var(--danger)">0.00</span></div>
+        </section>
+
+        <section class="terminal-box">
+            <div class="card">
+                <div class="profit-row">
+                    <div class="profit-box" onclick="smartCopy('rTP')"><span class="data-label" style="color:var(--blue)">TP (23% EXT)</span><div class="p-val" id="rTP" style="color:var(--blue)">0.00</div></div>
+                    <div class="profit-box" onclick="smartCopy('rRange')"><span class="data-label" style="color:var(--accent)">RANGE (PIPS)</span><div class="p-val" id="rRange" style="color:var(--accent)">0.00</div></div>
+                </div>
+                <div class="rsi-panel">
+                    <div class="rsi-meta">
+                        <div class="rsi-tag">RSI (14) • REAL-TIME SYNC</div>
+                        <div id="rsi-val">---</div>
+                    </div>
+                    <div class="rsi-track"><div id="rsi-bar"></div></div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <div class="footer-left">
+                <div id="session-module">SESI: <span id="session-tag">...</span></div>
+                <div id="date-display">--/--/--</div>
+                <div id="clock-module">00:00:00</div>
+            </div>
+        </footer>
+    </div>
+    <div style="height: 8px;"></div>
+</div>
+<div id="toastCopy" class="toast-msg">✓ Copied to clipboard</div>
+
+<script>
+    // ------------------------- GLOBAL STATE -------------------------
+    let currentPair = localStorage.getItem('lastPair') || "XAUUSDT";
+    let currentTF = localStorage.getItem('lastTF') || "15m";
+    let wsPrice = null;
+    let lastPrice = 0;
+    let candleData = [];
+    let lastRSI = 50;
+    
+    // SMC engine values with Liquidity Sweep & BOS
+    let engine = { 
+        f618: 0, ote: 0, deep: 0, sl: 0, tp: 0, range: 0, bias: "SCANNING",
+        swingHigh: 0, swingLow: 0,
+        lastSwingHigh: 0,
+        lastSwingLow: 0,
+        sweepDetected: false,
+        bosConfirmed: false,
+        liquiditySide: null,
+        sweepPrice: 0,
+        bosPrice: 0,
+        lastSweepTime: 0,
+        fvgEntryHighlight: false
+    };
+    
+    let lastSweepAlertTime = 0;
+    let lastBosAlertTime = 0;
+    
+    // ---------- Helper Functions ----------
+    function showToastMsg(message) {
+        const toast = document.getElementById('toastCopy');
+        toast.innerText = message || "✓ Copied to clipboard";
+        toast.style.opacity = '1';
+        setTimeout(() => { toast.style.opacity = '0'; }, 800);
+    }
+    
+    function showAlert(message, type = "sweep") {
+        const toast = document.getElementById('toastCopy');
+        toast.innerText = message;
+        toast.style.borderColor = type === "sweep" ? "var(--orange)" : "var(--accent)";
+        toast.style.color = type === "sweep" ? "var(--orange)" : "var(--accent)";
+        toast.style.opacity = '1';
+        setTimeout(() => { 
+            toast.style.opacity = '0';
+            toast.style.borderColor = "var(--accent)";
+            toast.style.color = "var(--accent)";
+        }, 2000);
+    }
+    
+    window.smartCopy = function(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        let rawText = el.innerText;
+        if (id === 'live-price') {
+            rawText = document.getElementById('live-price').innerText.replace(/[^0-9.,]/g, '');
+        }
+        navigator.clipboard.writeText(rawText).then(() => {
+            showToastMsg("✓ Copied: " + rawText);
+            el.classList.add('copied');
+            setTimeout(() => el.classList.remove('copied'), 300);
+        }).catch(() => {});
+    };
+    
+    function getPrecision() {
+        return currentPair === "XAUUSDT" ? 2 : 1;
+    }
+    
+    function computeRSI(currentPrice) {
+        if (!candleData.length || candleData.length < 14) return 50;
+        let closes = candleData.map(c => c.c);
+        let extended = [...closes, currentPrice];
+        let period = 14;
+        let gains = 0, losses = 0;
+        let startIdx = extended.length - period - 1;
+        if (startIdx < 0) startIdx = 0;
+        for (let i = startIdx + 1; i < extended.length; i++) {
+            let diff = extended[i] - extended[i-1];
+            if (diff >= 0) gains += diff;
+            else losses -= diff;
+        }
+        let avgGain = gains / period;
+        let avgLoss = losses / period;
+        let rs = (avgLoss === 0) ? 100 : (avgGain / avgLoss);
+        let rsiVal = 100 - (100 / (1 + rs));
+        return Math.min(100, Math.max(0, rsiVal));
+    }
+    
+    function detectLiquiditySweep(currentPrice) {
+        if (!engine.swingHigh || !engine.swingLow) return false;
+        
+        const buffer = currentPair === "XAUUSDT" ? 0.5 : 50;
+        let sweepDetected = false;
+        let sweepSide = null;
+        
+        if (currentPrice > engine.swingHigh + buffer && !engine.sweepDetected) {
+            sweepDetected = true;
+            sweepSide = "SELL";
+            engine.sweepPrice = currentPrice;
+            engine.lastSweepTime = Date.now();
+            engine.liquiditySide = "SELL";
+            
+            if (Date.now() - lastSweepAlertTime > 5000) {
+                showAlert("🔥 LIQUIDITY SWEEP | HIGH TAKEN @ " + currentPrice.toFixed(getPrecision()), "sweep");
+                lastSweepAlertTime = Date.now();
+            }
+        }
+        else if (currentPrice < engine.swingLow - buffer && !engine.sweepDetected) {
+            sweepDetected = true;
+            sweepSide = "BUY";
+            engine.sweepPrice = currentPrice;
+            engine.lastSweepTime = Date.now();
+            engine.liquiditySide = "BUY";
+            
+            if (Date.now() - lastSweepAlertTime > 5000) {
+                showAlert("🔥 LIQUIDITY SWEEP | LOW TAKEN @ " + currentPrice.toFixed(getPrecision()), "sweep");
+                lastSweepAlertTime = Date.now();
+            }
+        }
+        
+        if (sweepDetected) {
+            engine.sweepDetected = true;
+            engine.bosConfirmed = false;
+            updateLiquidityUI("SWEEP", sweepSide);
+            return true;
+        }
+        return false;
+    }
+    
+    function confirmBOS(currentPrice) {
+        if (!engine.sweepDetected || engine.bosConfirmed) return false;
+        
+        let bosConfirmed = false;
+        let bosSide = null;
+        
+        if (engine.liquiditySide === "BUY" && currentPrice > engine.swingHigh) {
+            bosConfirmed = true;
+            bosSide = "BULLISH";
+            engine.bosPrice = currentPrice;
+            if (Date.now() - lastBosAlertTime > 5000) {
+                showAlert("✅ BOS CONFIRMED | BULLISH STRUCTURE BREAK", "bos");
+                lastBosAlertTime = Date.now();
+            }
+        }
+        else if (engine.liquiditySide === "SELL" && currentPrice < engine.swingLow) {
+            bosConfirmed = true;
+            bosSide = "BEARISH";
+            engine.bosPrice = currentPrice;
+            if (Date.now() - lastBosAlertTime > 5000) {
+                showAlert("✅ BOS CONFIRMED | BEARISH STRUCTURE BREAK", "bos");
+                lastBosAlertTime = Date.now();
+            }
+        }
+        
+        if (bosConfirmed) {
+            engine.bosConfirmed = true;
+            engine.bias = bosSide === "BULLISH" ? "BULLISH_BOS" : "BEARISH_BOS";
+            updateLiquidityUI("BOS", bosSide);
+            highlightFVGEntry();
+            return true;
+        }
+        return false;
+    }
+    
+    function highlightFVGEntry() {
+        engine.fvgEntryHighlight = true;
+        const fvgElements = ['r618', 'r705', 'r79'];
+        fvgElements.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('fvg-highlight');
+                setTimeout(() => el.classList.remove('fvg-highlight'), 1500);
+            }
+        });
+    }
+    
+    function resetSweepStatusIfNewStructure() {
+        if (engine.swingHigh !== engine.lastSwingHigh || engine.swingLow !== engine.lastSwingLow) {
+            if (engine.sweepDetected && !engine.bosConfirmed) {
+                engine.sweepDetected = false;
+                engine.bosConfirmed = false;
+                engine.liquiditySide = null;
+                updateLiquidityUI("RESET", null);
+            }
+            engine.lastSwingHigh = engine.swingHigh;
+            engine.lastSwingLow = engine.swingLow;
+        }
+    }
+    
+    function updateLiquidityUI(status, side) {
+        const liquidityElem = document.getElementById('liquidity-status');
+        if (status === "SWEEP") {
+            liquidityElem.innerHTML = side === "BUY" ? "🔥 SWEEP DETECTED | BEAR TRAP" : "🔥 SWEEP DETECTED | BULL TRAP";
+            liquidityElem.className = "liquidity-status sweep";
+        } else if (status === "BOS") {
+            liquidityElem.innerHTML = side === "BULLISH" ? "✅ BOS CONFIRMED | BULLISH" : "✅ BOS CONFIRMED | BEARISH";
+            liquidityElem.className = "liquidity-status bos";
+        } else {
+            liquidityElem.innerHTML = "⚡ AWAITING SWEEP";
+            liquidityElem.className = "liquidity-status";
+        }
+    }
+    
+    function calculateSMC() {
+        if (!candleData.length || candleData.length < 30) return;
+        const lookback = Math.min(candleData.length, 55);
+        const slice = candleData.slice(-lookback);
+        const swingHigh = Math.max(...slice.map(c => c.h));
+        const swingLow = Math.min(...slice.map(c => c.l));
+        const lastCandle = candleData[candleData.length - 1];
+        const lastClose = lastCandle.c;
+        const rangeVal = swingHigh - swingLow;
+        if (rangeVal <= 0) return;
+        
+        const isBullish = lastClose > (swingHigh + swingLow) / 2;
+        
+        engine.swingHigh = swingHigh;
+        engine.swingLow = swingLow;
+        
+        resetSweepStatusIfNewStructure();
+        
+        if (engine.bosConfirmed) {
+            // keep BOS bias
+        } else {
+            engine.bias = isBullish ? "BULLISH" : "BEARISH";
+        }
+        
+        const isBullishForLevels = engine.bosConfirmed ? (engine.bias === "BULLISH_BOS") : isBullish;
+        
+        if (isBullishForLevels) {
+            engine.f618 = swingLow + (rangeVal * 0.618);
+            engine.ote = swingLow + (rangeVal * 0.705);
+            engine.deep = swingLow + (rangeVal * 0.79);
+            engine.sl = swingLow - (rangeVal * 0.05);
+            engine.tp = swingHigh + (rangeVal * 0.23);
+        } else {
+            engine.f618 = swingHigh - (rangeVal * 0.618);
+            engine.ote = swingHigh - (rangeVal * 0.705);
+            engine.deep = swingHigh - (rangeVal * 0.79);
+            engine.sl = swingHigh + (rangeVal * 0.05);
+            engine.tp = swingLow - (rangeVal * 0.23);
+        }
+        
+        const currentPrice = lastClose;
+        const distanceToTP = Math.abs(currentPrice - engine.tp);
+        if (currentPair === "XAUUSDT") engine.range = distanceToTP * 10;
+        else engine.range = distanceToTP;
+    }
+    
+    function updateUI(currentPrice, forceRefresh = false) {
+        const prec = getPrecision();
+        const pFixed = currentPrice.toFixed(prec);
+        const parts = pFixed.split('.');
+        const integerPart = parts[0];
+        const decimalPart = parts[1] || "00";
+        const priceHtml = `${integerPart}<span class="price-decimal">.${decimalPart}</span>`;
+        const priceElem = document.getElementById('live-price');
+        priceElem.innerHTML = priceHtml;
+        
+        if (currentPrice > lastPrice && lastPrice !== 0) priceElem.style.color = "var(--accent)";
+        else if (currentPrice < lastPrice && lastPrice !== 0) priceElem.style.color = "var(--danger)";
+        else priceElem.style.color = "#fff";
+        
+        priceElem.classList.add('price-flash');
+        setTimeout(() => priceElem.classList.remove('price-flash'), 100);
+        
+        document.getElementById('r618').innerText = engine.f618.toFixed(prec);
+        document.getElementById('r705').innerText = engine.ote.toFixed(prec);
+        document.getElementById('r79').innerText = engine.deep.toFixed(prec);
+        document.getElementById('rSL').innerText = engine.sl.toFixed(prec);
+        document.getElementById('rTP').innerText = engine.tp.toFixed(prec);
+        
+        const rangePips = (engine.range).toFixed(1);
+        document.getElementById('rRange').innerText = rangePips;
+        
+        const rsiVal = computeRSI(currentPrice);
+        lastRSI = rsiVal;
+        const rsiBar = document.getElementById('rsi-bar');
+        const rsiTxt = document.getElementById('rsi-val');
+        rsiTxt.innerText = rsiVal.toFixed(2);
+        rsiBar.style.width = Math.min(100, Math.max(0, rsiVal)) + "%";
+        
+        if (rsiVal > 70) {
+            rsiBar.style.background = "var(--danger)";
+            rsiTxt.style.color = "var(--danger)";
+        } else if (rsiVal < 30) {
+            rsiBar.style.background = "var(--accent)";
+            rsiTxt.style.color = "var(--accent)";
+        } else {
+            rsiBar.style.background = "var(--silver-medium)";
+            rsiTxt.style.color = "var(--silver-bright)";
+        }
+        
+        const sysDiv = document.getElementById('sys-status');
+        let statusText = "";
+        if (engine.bosConfirmed) {
+            statusText = engine.bias === "BULLISH_BOS" ? "BOS✓ BULL" : "BOS✓ BEAR";
+            sysDiv.style.color = "var(--accent)";
+        } else if (engine.sweepDetected) {
+            statusText = engine.liquiditySide === "BUY" ? "SWEEP_LOW ◆" : "SWEEP_HIGH ◇";
+            sysDiv.style.color = "var(--orange)";
+        } else {
+            statusText = engine.bias === "BULLISH" ? "BULL_FLOW ◆" : (engine.bias === "BEARISH" ? "BEAR_FLOW ◇" : "NEUTRAL");
+            sysDiv.style.color = engine.bias === "BULLISH" ? "var(--accent)" : (engine.bias === "BEARISH" ? "var(--danger)" : "var(--gold)");
+        }
+        sysDiv.innerHTML = statusText;
+        
+        let biasText = "";
+        if (engine.bosConfirmed) {
+            biasText = engine.bias === "BULLISH_BOS" ? "BOS BULLISH ✓" : "BOS BEARISH ✓";
+        } else if (engine.sweepDetected) {
+            biasText = engine.liquiditySide === "BUY" ? "SWEEP (BUY ZONE)" : "SWEEP (SELL ZONE)";
+        } else {
+            biasText = engine.bias === "BULLISH" ? "PREMIUM ZONE" : "DISCOUNT ZONE";
+        }
+        document.getElementById('pattern-val').innerText = biasText;
+        document.getElementById('pattern-val').style.color = engine.bosConfirmed ? "var(--accent)" : (engine.sweepDetected ? "var(--orange)" : "var(--blue)");
+        
+        const fvgElem = document.getElementById('fvg-status');
+        if (engine.bosConfirmed) {
+            fvgElem.innerText = "📈 ENTRY ZONE: FVG";
+            fvgElem.style.color = "var(--accent)";
+        } else if (engine.sweepDetected) {
+            fvgElem.innerText = "🎯 WAITING BOS";
+            fvgElem.style.color = "var(--orange)";
+        } else {
+            fvgElem.innerText = engine.bias === "BULLISH" ? "FVG: BULL IMBALANCE" : "FVG: BEAR IMBALANCE";
+            fvgElem.style.color = engine.bias === "BULLISH" ? "var(--accent)" : "var(--danger)";
+        }
+        
+        lastPrice = currentPrice;
+    }
+    
+    async function fetchKlines() {
+        try {
+            const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${currentPair}&interval=${currentTF}&limit=120`;
+            const resp = await fetch(url);
+            const data = await resp.json();
+            if (!Array.isArray(data)) throw new Error("Invalid klines");
+            candleData = data.map(d => ({
+                o: parseFloat(d[1]),
+                h: parseFloat(d[2]),
+                l: parseFloat(d[3]),
+                c: parseFloat(d[4]),
+                t: d[0]
+            }));
+            calculateSMC();
+            if (candleData.length) {
+                const lastCandlePrice = candleData[candleData.length-1].c;
+                updateUI(lastCandlePrice);
+            }
+            return true;
+        } catch (err) {
+            console.error("Klines fetch error", err);
+            return false;
+        }
+    }
+    
+    function initWebSocket() {
+        if (wsPrice) wsPrice.close();
+        const streamName = `${currentPair.toLowerCase()}@aggTrade`;
+        const wsUrl = `wss://fstream.binance.com/ws/${streamName}`;
+        wsPrice = new WebSocket(wsUrl);
+        
+        wsPrice.onopen = () => {
+            document.getElementById('sys-status').innerHTML = "LIVE ⚡";
+            document.getElementById('sys-status').style.color = "var(--accent)";
+        };
+        
+        wsPrice.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg && typeof msg.p !== 'undefined') {
+                    const tradePrice = parseFloat(msg.p);
+                    if (!isNaN(tradePrice) && tradePrice > 0) {
+                        calculateSMC();
+                        detectLiquiditySweep(tradePrice);
+                        confirmBOS(tradePrice);
+                        updateUI(tradePrice);
+                    }
+                }
+            } catch (e) {}
+        };
+        
+        wsPrice.onerror = () => {
+            document.getElementById('sys-status').innerHTML = "WS_RECONNECT";
+        };
+        
+        wsPrice.onclose = () => {
+            setTimeout(() => {
+                if (wsPrice?.readyState !== WebSocket.OPEN) initWebSocket();
+            }, 2000);
+        };
+    }
+    
+    async function fullReload() {
+        document.getElementById('main-terminal').classList.add('syncing');
+        document.getElementById('sys-status').innerHTML = "SYNC...";
+        try {
+            await fetchKlines();
+            initWebSocket();
+            document.querySelectorAll('.btn-tab').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${currentPair}`)?.classList.add('active');
+            const tfMap = { '5m':'tf-5m', '15m':'tf-15m', '1h':'tf-1h' };
+            document.getElementById(tfMap[currentTF])?.classList.add('active');
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setTimeout(() => document.getElementById('main-terminal').classList.remove('syncing'), 500);
+        }
+    }
+    
+    window.changeMarket = function(pair) {
+        if (pair === currentPair) return;
+        currentPair = pair;
+        localStorage.setItem('lastPair', pair);
+        fullReload();
+    };
+    
+    window.changeTF = function(tf) {
+        if (tf === currentTF) return;
+        currentTF = tf;
+        localStorage.setItem('lastTF', tf);
+        fullReload();
+    };
+    
+    function bindUIEvents() {
+        document.querySelectorAll('[data-pair]').forEach(btn => {
+            btn.addEventListener('click', () => changeMarket(btn.getAttribute('data-pair')));
+        });
+        document.querySelectorAll('[data-tf]').forEach(btn => {
+            btn.addEventListener('click', () => changeTF(btn.getAttribute('data-tf')));
+        });
+        window.changeMarket = changeMarket;
+        window.changeTF = changeTF;
+    }
+    
+    function updateClockAndSession() {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const seconds = now.getSeconds();
+        const timeStr = `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+        document.getElementById('clock-module').innerText = timeStr;
+        const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+        document.getElementById('date-display').innerText = dateStr;
+        let session = "ASIA";
+        if (hours >= 7 && hours < 14) session = "ASIA";
+        else if (hours >= 14 && hours < 20) session = "LONDON";
+        else session = "NY_VOL";
+        document.getElementById('session-tag').innerText = session;
+    }
+    
+    async function init() {
+        bindUIEvents();
+        await fullReload();
+        setInterval(updateClockAndSession, 1000);
+        setInterval(() => {
+            if (candleData.length && lastPrice > 0) {
+                calculateSMC();
+                updateUI(lastPrice);
+            }
+        }, 4000);
+    }
+    
+    init();
+</script>
+</body>
+</html>
