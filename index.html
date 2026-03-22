@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SMC APEX v13.0.0 | GOLDEN STANDARD + LIQUIDITY SWEEP + ADX FILTER</title>
+    <title>SMC APEX v13.0.0 | GOLDEN STANDARD + LIQSWEEP + ADX FILTER + EMA34</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;800&display=swap');
         
@@ -194,6 +194,33 @@
         .adx-status.ranging {
             border-color: var(--silver-dark);
             color: var(--silver-dark);
+        }
+        
+        /* EMA34 STYLES - BARU */
+        .ema34-status {
+            background: rgba(0,0,0,0.6);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.6rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono';
+            border: 1px solid var(--gold-dim);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .ema34-status.bullish {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .ema34-status.bearish {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+        .ema34-value {
+            font-weight: 800;
+            min-width: 65px;
+            text-align: right;
         }
         
         @keyframes pulse {
@@ -436,6 +463,37 @@
             100% { opacity: 1; }
         }
         .price-flash { animation: flashPrice 0.08s 2; }
+        
+        /* RESPONSIVE */
+        @media (max-width: 500px) {
+            .data-item { min-width: 85px; padding: 10px 8px; }
+            .data-val { font-size: 0.7rem; }
+            .data-label { font-size: 0.45rem; white-space: normal; }
+            .profit-box { min-width: 120px; }
+            .p-val { font-size: 0.8rem; }
+            #live-price { font-size: 2.2rem; }
+            .price-decimal { font-size: 1.4rem; }
+            .hero-meta-row { gap: 8px; }
+            .meta-bias, .liquidity-status, .meta-fvg, .adx-status, .ema34-status { 
+                padding: 3px 8px; 
+                font-size: 0.55rem; 
+            }
+            .adx-bar-container { width: 35px; }
+            .ema34-value { min-width: 55px; font-size: 0.55rem; }
+        }
+        
+        @media (max-width: 400px) {
+            .data-item { min-width: 75px; }
+            .profit-row { flex-direction: column; }
+            .profit-box { min-width: auto; }
+            .hero-meta-row { gap: 6px; }
+            .meta-bias, .liquidity-status, .meta-fvg, .adx-status, .ema34-status { 
+                padding: 2px 6px; 
+                font-size: 0.5rem; 
+            }
+            .adx-bar-container { width: 30px; }
+            .ema34-value { min-width: 50px; }
+        }
     </style>
 </head>
 <body>
@@ -444,7 +502,7 @@
         <header class="header">
             <div class="brand-container">
                 <div class="brand">SMC_APEX v13.0.0</div>
-                <div class="meta-label-sub">LIQUIDITY SWEEP + BOS + ADX</div>
+                <div class="meta-label-sub">LIQSWEEP + BOS + ADX + EMA34</div>
             </div>
             <div id="sys-status" style="color: var(--gold)">INIT...</div>
         </header>
@@ -472,6 +530,11 @@
                     <div class="adx-bar-container">
                         <div class="adx-bar" id="adx-bar"></div>
                     </div>
+                </div>
+                <!-- EMA34 - BARU -->
+                <div class="ema34-status" id="ema34-status">
+                    <span>📊 EMA34</span>
+                    <span class="ema34-value" id="ema34-value">--</span>
                 </div>
             </div>
             <div id="live-price" onclick="smartCopy('live-price')">0.00</div>
@@ -525,7 +588,7 @@
     let lastRSI = 50;
     let lastAdxAlertTime = 0;
     
-    // SMC engine values with Liquidity Sweep & BOS & ADX
+    // SMC engine values with Liquidity Sweep & BOS & ADX & EMA34
     let engine = { 
         f618: 0, ote: 0, deep: 0, sl: 0, tp: 0, range: 0, bias: "SCANNING",
         swingHigh: 0, swingLow: 0,
@@ -542,7 +605,10 @@
         adx: 25,
         isTrending: false,
         adxThreshold: 25,
-        previousAdx: 25
+        previousAdx: 25,
+        // EMA34 Properties - BARU
+        ema34: 0,
+        isAboveEMA34: false
     };
     
     let lastSweepAlertTime = 0;
@@ -607,6 +673,55 @@
         return Math.min(100, Math.max(0, rsiVal));
     }
     
+    // ========== EMA34 CALCULATION - BARU ==========
+    function calculateEMA34() {
+        if (!candleData.length || candleData.length < 34) return null;
+        
+        try {
+            const period = 34;
+            const closes = candleData.slice(-period * 2).map(c => c.c);
+            if (closes.length < period) return null;
+            
+            const multiplier = 2 / (period + 1);
+            let ema = closes[0];
+            
+            for (let i = 1; i < closes.length; i++) {
+                ema = (closes[i] - ema) * multiplier + ema;
+            }
+            return ema;
+        } catch (error) {
+            console.warn("EMA34 calculation error:", error);
+            return null;
+        }
+    }
+    
+    function updateEMA34UI(currentPrice) {
+        const emaValue = calculateEMA34();
+        const emaElem = document.getElementById('ema34-value');
+        const emaStatus = document.getElementById('ema34-status');
+        
+        if (!emaElem || !emaStatus) return;
+        
+        if (emaValue !== null && !isNaN(emaValue)) {
+            engine.ema34 = emaValue;
+            engine.isAboveEMA34 = currentPrice > emaValue;
+            
+            const prec = getPrecision();
+            emaElem.innerText = emaValue.toFixed(prec);
+            
+            if (engine.isAboveEMA34) {
+                emaStatus.className = "ema34-status bullish";
+                emaElem.style.color = "var(--accent)";
+            } else {
+                emaStatus.className = "ema34-status bearish";
+                emaElem.style.color = "var(--danger)";
+            }
+        } else {
+            emaElem.innerText = "--";
+            emaStatus.className = "ema34-status";
+        }
+    }
+    
     // ========== ADX CALCULATION ==========
     function computeADX() {
         if (!candleData.length || candleData.length < 28) return 25;
@@ -627,13 +742,11 @@
                 const prevLow = data[i-1].l;
                 const prevClose = data[i-1].c;
                 
-                // True Range
                 const tr1 = high - low;
                 const tr2 = Math.abs(high - prevClose);
                 const tr3 = Math.abs(low - prevClose);
                 tr.push(Math.max(tr1, tr2, tr3));
                 
-                // Directional Movement
                 const upMove = high - prevHigh;
                 const downMove = prevLow - low;
                 
@@ -651,7 +764,6 @@
             
             if (tr.length < period) return 25;
             
-            // Smoothing
             let avgTR = tr.slice(0, period).reduce((a, b) => a + b, 0) / period;
             let avgPlusDM = plusDM.slice(0, period).reduce((a, b) => a + b, 0) / period;
             let avgMinusDM = minusDM.slice(0, period).reduce((a, b) => a + b, 0) / period;
@@ -706,15 +818,24 @@
             recommendationText = "🔥 VERY STRONG TREND (ADX > 40) - Akurasi sangat tinggi. Entry optimal di FVG.";
         }
         
+        // Tambahkan info EMA34 ke rekomendasi
+        let emaInfo = "";
+        if (engine.ema34 > 0) {
+            if (engine.isAboveEMA34) {
+                emaInfo = " | EMA34: BULLISH (harga > EMA)";
+            } else {
+                emaInfo = " | EMA34: BEARISH (harga < EMA)";
+            }
+        }
+        
         adxElem.className = `adx-status ${statusClass}`;
         adxBar.style.background = barColor;
         adxRecommendation.className = `adx-recommendation ${statusClass}`;
-        adxRecommendation.innerHTML = `📊 ADX: ${adxValue.toFixed(1)} - ${recommendationText}`;
+        adxRecommendation.innerHTML = `📊 ADX: ${adxValue.toFixed(1)} - ${recommendationText}${emaInfo}`;
         
         engine.adx = adxValue;
         engine.isTrending = adxValue >= engine.adxThreshold;
         
-        // Alert when ADX crosses threshold
         if (engine.previousAdx < 25 && adxValue >= 25 && Date.now() - lastAdxAlertTime > 10000) {
             showAlert(`📈 ADX: ${engine.previousAdx.toFixed(1)} → ${adxValue.toFixed(1)} | Market now TRENDING! Akurasi meningkat ke 76%`, "adx");
             lastAdxAlertTime = Date.now();
@@ -938,6 +1059,9 @@
         // ADX Update
         const adxVal = computeADX();
         updateADXUI(adxVal);
+        
+        // EMA34 Update - BARU
+        updateEMA34UI(currentPrice);
         
         const sysDiv = document.getElementById('sys-status');
         let statusText = "";
