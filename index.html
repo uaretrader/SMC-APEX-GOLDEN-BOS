@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SMC APEX v13.0.0 | GOLDEN STANDARD + LIQSWEEP + ADX FILTER + EMA34</title>
+    <title>SMC APEX v15.0.0 | REAL-TIME SMC + OPTIMIZED</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;800&display=swap');
         
@@ -20,7 +20,6 @@
             --gold: #ffcc00; 
             --danger: #ff4757; 
             --blue: #00d4ff; 
-            --purple: #aa66ff;
             --orange: #ff884d;
             --border: rgba(0, 255, 170, 0.2);
             --silver-bright: #e0e0e0; 
@@ -74,10 +73,9 @@
             display: flex; 
             flex-direction: column; 
             align-items: flex-start;
-            text-align: left;
         }
-        .brand { font-weight: 900; font-size: 0.85rem; letter-spacing: 2px; color: var(--accent); text-align: left; }
-        .meta-label-sub { font-size: 0.55rem; color: var(--silver-dark); letter-spacing: 3px; font-family: 'JetBrains Mono'; font-weight: 800; text-align: left; }
+        .brand { font-weight: 900; font-size: 0.85rem; letter-spacing: 2px; color: var(--accent); }
+        .meta-label-sub { font-size: 0.55rem; color: var(--silver-dark); letter-spacing: 3px; font-family: 'JetBrains Mono'; font-weight: 800; }
         #sys-status { font-family: 'JetBrains Mono'; font-size: 0.65rem; font-weight: 800; border-left: 2px solid var(--gold); padding-left: 8px; transition: all 0.2s; }
 
         .nav-section { 
@@ -100,7 +98,6 @@
             cursor: pointer; 
             font-family: 'JetBrains Mono'; 
             transition: 0.2s;
-            letter-spacing: 0.3px;
         }
         .btn-tab.active { 
             border-color: var(--accent); 
@@ -127,10 +124,8 @@
             font-family: 'JetBrains Mono'; 
             font-weight: 800; 
             font-size: 0.65rem;
-            letter-spacing: 0.5px;
             flex-wrap: wrap;
         }
-        .meta-bias span, .meta-fvg span { font-weight: 800; }
         .liquidity-status {
             background: rgba(0,0,0,0.6);
             padding: 2px 8px;
@@ -140,17 +135,9 @@
             font-family: 'JetBrains Mono';
             border: 1px solid var(--gold-dim);
         }
-        .liquidity-status.sweep {
-            border-color: var(--orange);
-            color: var(--orange);
-            animation: pulse 0.5s ease;
-        }
-        .liquidity-status.bos {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
+        .liquidity-status.sweep { border-color: var(--orange); color: var(--orange); animation: pulse 0.5s ease; }
+        .liquidity-status.bos { border-color: var(--accent); color: var(--accent); }
         
-        /* ADX STYLES */
         .adx-status {
             background: rgba(0,0,0,0.6);
             padding: 2px 8px;
@@ -163,40 +150,13 @@
             align-items: center;
             gap: 6px;
         }
-        .adx-bar-container {
-            width: 40px;
-            height: 4px;
-            background: #2a2a2a;
-            border-radius: 4px;
-            overflow: hidden;
-            display: inline-block;
-        }
-        .adx-bar {
-            height: 100%;
-            width: 0%;
-            background: var(--silver-medium);
-            transition: width 0.3s ease, background 0.3s ease;
-            border-radius: 4px;
-        }
-        .adx-value {
-            font-weight: 800;
-            min-width: 38px;
-            text-align: right;
-        }
-        .adx-status.strong {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-        .adx-status.weak {
-            border-color: var(--gold);
-            color: var(--gold);
-        }
-        .adx-status.ranging {
-            border-color: var(--silver-dark);
-            color: var(--silver-dark);
-        }
+        .adx-bar-container { width: 40px; height: 4px; background: #2a2a2a; border-radius: 4px; overflow: hidden; display: inline-block; }
+        .adx-bar { height: 100%; width: 0%; background: var(--silver-medium); transition: width 0.3s ease; border-radius: 4px; }
+        .adx-value { font-weight: 800; min-width: 38px; text-align: right; }
+        .adx-status.strong { border-color: var(--accent); color: var(--accent); }
+        .adx-status.weak { border-color: var(--gold); color: var(--gold); }
+        .adx-status.ranging { border-color: var(--silver-dark); color: var(--silver-dark); }
         
-        /* EMA34 STYLES - BARU */
         .ema34-status {
             background: rgba(0,0,0,0.6);
             padding: 2px 8px;
@@ -209,31 +169,13 @@
             align-items: center;
             gap: 6px;
         }
-        .ema34-status.bullish {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-        .ema34-status.bearish {
-            border-color: var(--danger);
-            color: var(--danger);
-        }
-        .ema34-value {
-            font-weight: 800;
-            min-width: 65px;
-            text-align: right;
-        }
+        .ema34-status.bullish { border-color: var(--accent); color: var(--accent); }
+        .ema34-status.bearish { border-color: var(--danger); color: var(--danger); }
+        .ema34-value { font-weight: 800; min-width: 65px; text-align: right; }
         
-        @keyframes pulse {
-            0% { opacity: 0.5; transform: scale(0.95); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-        @keyframes adxFlash {
-            0% { opacity: 0.6; transform: scale(0.98); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-        .adx-flash {
-            animation: adxFlash 0.3s ease;
-        }
+        @keyframes pulse { 0% { opacity: 0.5; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+        @keyframes adxFlash { 0% { opacity: 0.6; transform: scale(0.98); } 100% { opacity: 1; transform: scale(1); } }
+        .adx-flash { animation: adxFlash 0.3s ease; }
         
         #live-price { 
             font-family: 'JetBrains Mono'; 
@@ -245,7 +187,6 @@
             cursor: pointer; 
             transition: color 0.08s linear;
             word-break: break-word;
-            text-align: left;
             width: 100%;
         }
         .price-decimal { color: var(--accent); opacity: 0.7; font-size: 2.2rem; }
@@ -276,102 +217,25 @@
             display: block; 
             font-weight: 700; 
             letter-spacing: 0.8px;
-            text-align: left;
         }
-        .data-val { 
-            font-family: 'JetBrains Mono'; 
-            font-size: 0.85rem; 
-            color: #fff; 
-            font-weight: 800;
-            text-align: left;
-        }
-        .fvg-highlight {
-            animation: fvgPulse 0.8s ease 2;
-            text-shadow: 0 0 8px var(--accent);
-        }
-        @keyframes fvgPulse {
-            0% { text-shadow: 0 0 0 var(--accent); }
-            100% { text-shadow: 0 0 12px var(--accent); }
-        }
+        .data-val { font-family: 'JetBrains Mono'; font-size: 0.85rem; color: #fff; font-weight: 800; }
+        .fvg-highlight { animation: fvgPulse 0.8s ease 2; text-shadow: 0 0 8px var(--accent); }
+        @keyframes fvgPulse { 0% { text-shadow: 0 0 0 var(--accent); } 100% { text-shadow: 0 0 12px var(--accent); } }
 
         .terminal-box { padding: 14px 16px; width: 100%; }
-        .card { 
-            background: var(--card-bg); 
-            border: 1px solid #151515; 
-            border-radius: 14px; 
-            padding: 14px; 
-            backdrop-filter: blur(2px);
-        }
+        .card { background: var(--card-bg); border: 1px solid #151515; border-radius: 14px; padding: 14px; backdrop-filter: blur(2px); }
         
-        .profit-row { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 12px; 
-            margin-bottom: 14px;
-            text-align: left;
-        }
-        .profit-box { 
-            background: rgba(0,0,0,0.6); 
-            border: 1px solid #1c1c1c; 
-            padding: 12px 5px; 
-            border-radius: 12px; 
-            text-align: left;
-            padding-left: 12px;
-            cursor: pointer; 
-            transition: 0.1s; 
-        }
+        .profit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+        .profit-box { background: rgba(0,0,0,0.6); border: 1px solid #1c1c1c; padding: 12px 5px; border-radius: 12px; text-align: left; padding-left: 12px; cursor: pointer; transition: 0.1s; }
         .profit-box:active { background: #111; }
-        .profit-box .data-label { text-align: left; }
-        .p-val { 
-            font-family: 'JetBrains Mono'; 
-            font-size: 1rem; 
-            font-weight: 800; 
-            letter-spacing: 0.5px;
-            text-align: left;
-        }
+        .p-val { font-family: 'JetBrains Mono'; font-size: 1rem; font-weight: 800; }
 
-        .rsi-panel { 
-            margin-top: 6px; 
-            padding: 12px 12px; 
-            border: 1px solid var(--gold-dim); 
-            border-radius: 14px; 
-            background: rgba(0, 0, 0, 0.4);
-            text-align: left;
-        }
-        .rsi-meta { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 8px; 
-        }
-        .rsi-tag { 
-            font-size: 0.55rem; 
-            font-weight: 900; 
-            color: var(--silver-dark); 
-            font-family: 'JetBrains Mono'; 
-            letter-spacing: 1px; 
-            text-align: left;
-        }
-        #rsi-val { 
-            font-family: 'JetBrains Mono'; 
-            font-size: 0.9rem; 
-            font-weight: 800; 
-            color: var(--silver-bright);
-            text-align: right;
-        }
-        .rsi-track { 
-            height: 3px; 
-            background: #2a2a2a; 
-            border-radius: 10px; 
-            overflow: hidden; 
-            margin-top: 6px; 
-        }
-        #rsi-bar { 
-            height: 100%; 
-            width: 0%; 
-            background: var(--silver-medium);
-            transition: width 0.2s ease, background 0.2s; 
-        }
+        .rsi-panel { margin-top: 6px; padding: 12px; border: 1px solid var(--gold-dim); border-radius: 14px; background: rgba(0, 0, 0, 0.4); }
+        .rsi-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .rsi-tag { font-size: 0.55rem; font-weight: 900; color: var(--silver-dark); font-family: 'JetBrains Mono'; }
+        #rsi-val { font-family: 'JetBrains Mono'; font-size: 0.9rem; font-weight: 800; }
+        .rsi-track { height: 3px; background: #2a2a2a; border-radius: 10px; overflow: hidden; margin-top: 6px; }
+        #rsi-bar { height: 100%; width: 0%; background: var(--silver-medium); transition: width 0.2s ease; }
         
         .adx-recommendation {
             margin-top: 8px;
@@ -382,61 +246,15 @@
             font-family: 'JetBrains Mono';
             border-left: 2px solid var(--gold-dim);
         }
-        .adx-recommendation.strong {
-            border-left-color: var(--accent);
-            color: var(--accent);
-        }
-        .adx-recommendation.weak {
-            border-left-color: var(--gold);
-            color: var(--gold);
-        }
-        .adx-recommendation.ranging {
-            border-left-color: var(--silver-dark);
-            color: var(--silver-dark);
-        }
+        .adx-recommendation.strong { border-left-color: var(--accent); color: var(--accent); }
+        .adx-recommendation.weak { border-left-color: var(--gold); color: var(--gold); }
+        .adx-recommendation.ranging { border-left-color: var(--silver-dark); color: var(--silver-dark); }
 
-        .footer { 
-            padding: 12px 18px; 
-            border-top: 1px solid #111; 
-            background: #000; 
-            display: flex; 
-            justify-content: flex-start;
-            align-items: center; 
-            font-size: 0.55rem; 
-            font-family: 'JetBrains Mono'; 
-            color: var(--silver-dark);
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        .footer-left { 
-            display: flex; 
-            gap: 12px; 
-            align-items: center;
-            text-align: left;
-        }
-        #session-module { 
-            color: var(--gold); 
-            font-weight: 800;
-            background: #080808;
-            padding: 4px 8px;
-            border-radius: 20px;
-            letter-spacing: 1px;
-        }
-        #date-display { 
-            color: var(--silver-bright);
-            background: #080808;
-            padding: 4px 8px;
-            border-radius: 20px;
-            letter-spacing: 0.5px;
-        }
-        #clock-module { 
-            color: #fff; 
-            font-weight: 800; 
-            background: #080808; 
-            padding: 4px 8px; 
-            border-radius: 20px; 
-            letter-spacing: 1px; 
-        }
+        .footer { padding: 12px 18px; border-top: 1px solid #111; background: #000; display: flex; justify-content: flex-start; align-items: center; font-size: 0.55rem; font-family: 'JetBrains Mono'; color: var(--silver-dark); flex-wrap: wrap; gap: 12px; }
+        .footer-left { display: flex; gap: 12px; align-items: center; }
+        #session-module { color: var(--gold); font-weight: 800; background: #080808; padding: 4px 8px; border-radius: 20px; }
+        #date-display { color: var(--silver-bright); background: #080808; padding: 4px 8px; border-radius: 20px; }
+        #clock-module { color: #fff; font-weight: 800; background: #080808; padding: 4px 8px; border-radius: 20px; }
 
         .syncing { opacity: 0.75; transition: opacity 0.2s; }
         .copied { color: #fff !important; text-shadow: 0 0 8px var(--accent); transition: 0.1s; }
@@ -458,11 +276,10 @@
             opacity: 0;
             transition: opacity 0.2s;
         }
-        @keyframes flashPrice {
-            0% { opacity: 0.6; }
-            100% { opacity: 1; }
-        }
         .price-flash { animation: flashPrice 0.08s 2; }
+        @keyframes flashPrice { 0% { opacity: 0.6; } 100% { opacity: 1; } }
+        .range-pulse { animation: rangePulse 0.3s ease; }
+        @keyframes rangePulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); color: #fff; } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -470,50 +287,47 @@
     <div class="terminal-container" id="main-terminal">
         <header class="header">
             <div class="brand-container">
-                <div class="brand">SMC_APEX v13.0.0</div>
-                <div class="meta-label-sub">LIQSWEEP + BOS + ADX + EMA34</div>
+                <div class="brand">SMC_APEX v15.0.0</div>
+                <div class="meta-label-sub">REAL-TIME SMC | OPTIMIZED</div>
             </div>
-            <div id="sys-status" style="color: var(--gold)">INIT...</div>
+            <div id="sys-status">INIT...</div>
         </header>
 
         <nav class="nav-section">
             <div class="nav-group">
-                <button class="btn-tab" data-pair="XAUUSDT" id="btn-XAUUSDT">XAUUSD</button>
-                <button class="btn-tab" data-pair="BTCUSDT" id="btn-BTCUSDT">BTCUSD</button>
+                <button class="btn-tab" data-pair="XAUUSDT">XAUUSD</button>
+                <button class="btn-tab" data-pair="BTCUSDT">BTCUSD</button>
             </div>
             <div class="nav-group">
-                <button class="btn-tab" data-tf="5m" id="tf-5m">M5</button>
-                <button class="btn-tab" data-tf="15m" id="tf-15m">M15</button>
-                <button class="btn-tab" data-tf="1h" id="tf-1h">H1</button>
+                <button class="btn-tab" data-tf="5m">M5</button>
+                <button class="btn-tab" data-tf="15m">M15</button>
+                <button class="btn-tab" data-tf="1h">H1</button>
             </div>
         </nav>
 
         <main class="hero-display">
             <div class="hero-meta-row">
-                <div class="meta-bias">BIAS: <span id="pattern-val" style="color: var(--blue); font-weight:800">SCANNING</span></div>
+                <div class="meta-bias">BIAS: <span id="pattern-val" style="color: var(--blue);">SCANNING</span></div>
                 <div class="liquidity-status" id="liquidity-status">⚡ AWAITING SWEEP</div>
-                <div class="meta-fvg" id="fvg-status" style="color: var(--blue); font-weight:800">FVG: ACTIVE</div>
+                <div class="meta-fvg" id="fvg-status" style="color: var(--blue);">FVG: ACTIVE</div>
                 <div class="adx-status ranging" id="adx-status">
                     <span>ADX</span>
                     <span class="adx-value" id="adx-value">--</span>
-                    <div class="adx-bar-container">
-                        <div class="adx-bar" id="adx-bar"></div>
-                    </div>
+                    <div class="adx-bar-container"><div class="adx-bar" id="adx-bar"></div></div>
                 </div>
-                <!-- EMA34 - BARU DITAMBAHKAN -->
                 <div class="ema34-status" id="ema34-status">
                     <span>📊 EMA34</span>
                     <span class="ema34-value" id="ema34-value">--</span>
                 </div>
             </div>
-            <div id="live-price" onclick="smartCopy('live-price')">0.00</div>
+            <div id="live-price">0.00</div>
         </main>
 
         <section class="data-grid">
             <div class="data-item" onclick="smartCopy('r705')"><span class="data-label" style="color:var(--accent)">OTE (70.5%)</span><span class="data-val" id="r705" style="color:var(--accent)">0.00</span></div>
             <div class="data-item" onclick="smartCopy('r618')"><span class="data-label" style="color:var(--gold)">GOLDEN (61.8%)</span><span class="data-val" id="r618" style="color:var(--gold)">0.00</span></div>
             <div class="data-item" onclick="smartCopy('r79')"><span class="data-label" style="color:var(--blue)">DEEP (79.0%)</span><span class="data-val" id="r79" style="color:var(--blue)">0.00</span></div>
-            <div class="data-item" onclick="smartCopy('rSL')"><span class="data-label" style="color:var(--danger)">SL (PRECISION)</span><span class="data-val" id="rSL" style="color:var(--danger)">0.00</span></div>
+            <div class="data-item" onclick="smartCopy('rSL')"><span class="data-label" style="color:var(--danger)">SL (STRUCTURE)</span><span class="data-val" id="rSL" style="color:var(--danger)">0.00</span></div>
         </section>
 
         <section class="terminal-box">
@@ -524,14 +338,12 @@
                 </div>
                 <div class="rsi-panel">
                     <div class="rsi-meta">
-                        <div class="rsi-tag">RSI (14) • REAL-TIME SYNC</div>
+                        <div class="rsi-tag">RSI (14) • REAL-TIME</div>
                         <div id="rsi-val">---</div>
                     </div>
                     <div class="rsi-track"><div id="rsi-bar"></div></div>
                 </div>
-                <div class="adx-recommendation ranging" id="adx-recommendation">
-                    📊 ADX: Menghitung...
-                </div>
+                <div class="adx-recommendation ranging" id="adx-recommendation">📊 ADX: Menghitung...</div>
             </div>
         </section>
 
@@ -543,611 +355,465 @@
             </div>
         </footer>
     </div>
-    <div style="height: 8px;"></div>
 </div>
-<div id="toastCopy" class="toast-msg">✓ Copied to clipboard</div>
+<div id="toastCopy" class="toast-msg">✓ Copied</div>
 
 <script>
-    // ------------------------- GLOBAL STATE -------------------------
+    // ==================== OPTIMIZED REAL-TIME ENGINE ====================
+    
+    // State
     let currentPair = localStorage.getItem('lastPair') || "XAUUSDT";
     let currentTF = localStorage.getItem('lastTF') || "15m";
     let wsPrice = null;
     let lastPrice = 0;
     let candleData = [];
-    let lastRSI = 50;
     let lastAdxAlertTime = 0;
-    
-    // SMC engine values with Liquidity Sweep & BOS & ADX & EMA34
-    let engine = { 
-        f618: 0, ote: 0, deep: 0, sl: 0, tp: 0, range: 0, bias: "SCANNING",
-        swingHigh: 0, swingLow: 0,
-        lastSwingHigh: 0,
-        lastSwingLow: 0,
-        sweepDetected: false,
-        bosConfirmed: false,
-        liquiditySide: null,
-        sweepPrice: 0,
-        bosPrice: 0,
-        lastSweepTime: 0,
-        fvgEntryHighlight: false,
-        // ADX Properties
-        adx: 25,
-        isTrending: false,
-        adxThreshold: 25,
-        previousAdx: 25,
-        // EMA34 Properties - BARU DITAMBAHKAN
-        ema34: 0,
-        isAboveEMA34: false
-    };
-    
     let lastSweepAlertTime = 0;
     let lastBosAlertTime = 0;
+    let updateRAF = null;
     
-    // ---------- Helper Functions ----------
-    function showToastMsg(message) {
-        const toast = document.getElementById('toastCopy');
-        toast.innerText = message || "✓ Copied to clipboard";
-        toast.style.opacity = '1';
-        setTimeout(() => { toast.style.opacity = '0'; }, 800);
+    // Engine state
+    let engine = {
+        f618: 0, ote: 0, deep: 0, sl: 0, tp: 0, range: 0,
+        bias: "SCANNING",
+        swingHigh: 0, swingLow: 0, rangeVal: 0,
+        lastSwingHigh: 0, lastSwingLow: 0,
+        sweepDetected: false, bosConfirmed: false,
+        liquiditySide: null,
+        adx: 25, previousAdx: 25,
+        ema34: 0, isAboveEMA34: false,
+        // Static levels
+        staticSL: 0, staticTP: 0, staticF618: 0, staticOTE: 0, staticDeep: 0
+    };
+    
+    // Helper functions
+    function getLookbackPeriod() {
+        const map = { '5m': 60, '15m': 80, '1h': 120 };
+        return map[currentTF] || 80;
     }
     
-    function showAlert(message, type = "sweep") {
+    function getPrecision() {
+        return currentPair === "XAUUSDT" ? 2 : 1;
+    }
+    
+    function getSweepBuffer() {
+        return currentPair === "XAUUSDT" ? 0.5 : 50;
+    }
+    
+    function showToast(msg) {
         const toast = document.getElementById('toastCopy');
-        toast.innerText = message;
-        toast.style.borderColor = type === "sweep" ? "var(--orange)" : (type === "adx" ? "var(--blue)" : "var(--accent)");
-        toast.style.color = type === "sweep" ? "var(--orange)" : (type === "adx" ? "var(--blue)" : "var(--accent)");
+        toast.innerText = msg;
         toast.style.opacity = '1';
-        setTimeout(() => { 
+        setTimeout(() => toast.style.opacity = '0', 800);
+    }
+    
+    function showAlert(msg, type = 'sweep') {
+        const toast = document.getElementById('toastCopy');
+        toast.innerText = msg;
+        toast.style.borderColor = type === 'sweep' ? 'var(--orange)' : 'var(--accent)';
+        toast.style.color = type === 'sweep' ? 'var(--orange)' : 'var(--accent)';
+        toast.style.opacity = '1';
+        setTimeout(() => {
             toast.style.opacity = '0';
-            toast.style.borderColor = "var(--accent)";
-            toast.style.color = "var(--accent)";
+            toast.style.borderColor = 'var(--accent)';
+            toast.style.color = 'var(--accent)';
         }, 2000);
     }
     
     window.smartCopy = function(id) {
         const el = document.getElementById(id);
         if (!el) return;
-        let rawText = el.innerText;
-        if (id === 'live-price') {
-            rawText = document.getElementById('live-price').innerText.replace(/[^0-9.,]/g, '');
-        }
-        navigator.clipboard.writeText(rawText).then(() => {
-            showToastMsg("✓ Copied: " + rawText);
+        let text = el.innerText;
+        if (id === 'live-price') text = document.getElementById('live-price').innerText.replace(/[^0-9.,]/g, '');
+        navigator.clipboard.writeText(text).then(() => {
+            showToast("✓ " + text);
             el.classList.add('copied');
             setTimeout(() => el.classList.remove('copied'), 300);
-        }).catch(() => {});
+        });
     };
     
-    function getPrecision() {
-        return currentPair === "XAUUSDT" ? 2 : 1;
-    }
-    
+    // RSI Calculation
     function computeRSI(currentPrice) {
-        if (!candleData.length || candleData.length < 14) return 50;
+        if (candleData.length < 14) return 50;
         let closes = candleData.map(c => c.c);
         let extended = [...closes, currentPrice];
         let period = 14;
         let gains = 0, losses = 0;
-        let startIdx = extended.length - period - 1;
-        if (startIdx < 0) startIdx = 0;
-        for (let i = startIdx + 1; i < extended.length; i++) {
+        let start = extended.length - period - 1;
+        if (start < 0) start = 0;
+        for (let i = start + 1; i < extended.length; i++) {
             let diff = extended[i] - extended[i-1];
             if (diff >= 0) gains += diff;
             else losses -= diff;
         }
         let avgGain = gains / period;
         let avgLoss = losses / period;
-        let rs = (avgLoss === 0) ? 100 : (avgGain / avgLoss);
-        let rsiVal = 100 - (100 / (1 + rs));
-        return Math.min(100, Math.max(0, rsiVal));
+        let rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+        return Math.min(100, Math.max(0, 100 - (100 / (1 + rs))));
     }
     
-    // ========== EMA34 CALCULATION - BARU DITAMBAHKAN ==========
+    // EMA34 Calculation
     function calculateEMA34() {
-        if (!candleData.length || candleData.length < 34) return null;
-        
-        try {
-            const period = 34;
-            const closes = candleData.slice(-period * 2).map(c => c.c);
-            if (closes.length < period) return null;
-            
-            const multiplier = 2 / (period + 1);
-            let ema = closes[0];
-            
-            for (let i = 1; i < closes.length; i++) {
-                ema = (closes[i] - ema) * multiplier + ema;
-            }
-            return ema;
-        } catch (error) {
-            console.warn("EMA34 calculation error:", error);
-            return null;
-        }
+        if (candleData.length < 34) return null;
+        const period = 34;
+        const closes = candleData.slice(-period * 2).map(c => c.c);
+        if (closes.length < period) return null;
+        const multiplier = 2 / (period + 1);
+        let ema = closes[0];
+        for (let i = 1; i < closes.length; i++) ema = (closes[i] - ema) * multiplier + ema;
+        return ema;
     }
     
-    function updateEMA34UI(currentPrice) {
-        const emaValue = calculateEMA34();
-        const emaElem = document.getElementById('ema34-value');
-        const emaStatus = document.getElementById('ema34-status');
-        
-        if (!emaElem || !emaStatus) return;
-        
-        if (emaValue !== null && !isNaN(emaValue)) {
-            engine.ema34 = emaValue;
-            engine.isAboveEMA34 = currentPrice > emaValue;
-            
-            const prec = getPrecision();
-            emaElem.innerText = emaValue.toFixed(prec);
-            
-            if (engine.isAboveEMA34) {
-                emaStatus.className = "ema34-status bullish";
-                emaElem.style.color = "var(--accent)";
-            } else {
-                emaStatus.className = "ema34-status bearish";
-                emaElem.style.color = "var(--danger)";
-            }
-        } else {
-            emaElem.innerText = "--";
-            emaStatus.className = "ema34-status";
-        }
-    }
-    
-    // ========== ADX CALCULATION ==========
+    // ADX Calculation
     function computeADX() {
-        if (!candleData.length || candleData.length < 28) return 25;
+        if (candleData.length < 28) return 25;
+        const period = 14;
+        const data = candleData.slice(-period * 2);
+        if (data.length < period + 1) return 25;
         
-        try {
-            const period = 14;
-            const data = candleData.slice(-period * 2);
-            if (data.length < period + 1) return 25;
-            
-            let tr = [];
-            let plusDM = [];
-            let minusDM = [];
-            
-            for (let i = 1; i < data.length; i++) {
-                const high = data[i].h;
-                const low = data[i].l;
-                const prevHigh = data[i-1].h;
-                const prevLow = data[i-1].l;
-                const prevClose = data[i-1].c;
-                
-                // True Range
-                const tr1 = high - low;
-                const tr2 = Math.abs(high - prevClose);
-                const tr3 = Math.abs(low - prevClose);
-                tr.push(Math.max(tr1, tr2, tr3));
-                
-                // Directional Movement
-                const upMove = high - prevHigh;
-                const downMove = prevLow - low;
-                
-                if (upMove > downMove && upMove > 0) {
-                    plusDM.push(upMove);
-                    minusDM.push(0);
-                } else if (downMove > upMove && downMove > 0) {
-                    plusDM.push(0);
-                    minusDM.push(downMove);
-                } else {
-                    plusDM.push(0);
-                    minusDM.push(0);
-                }
-            }
-            
-            if (tr.length < period) return 25;
-            
-            // Smoothing
-            let avgTR = tr.slice(0, period).reduce((a, b) => a + b, 0) / period;
-            let avgPlusDM = plusDM.slice(0, period).reduce((a, b) => a + b, 0) / period;
-            let avgMinusDM = minusDM.slice(0, period).reduce((a, b) => a + b, 0) / period;
-            
-            for (let i = period; i < tr.length; i++) {
-                avgTR = (avgTR * (period - 1) + tr[i]) / period;
-                avgPlusDM = (avgPlusDM * (period - 1) + plusDM[i]) / period;
-                avgMinusDM = (avgMinusDM * (period - 1) + minusDM[i]) / period;
-            }
-            
-            const plusDI = (avgPlusDM / avgTR) * 100;
-            const minusDI = (avgMinusDM / avgTR) * 100;
-            const dx = Math.abs(plusDI - minusDI) / (plusDI + minusDI) * 100;
-            
-            return Math.min(100, Math.max(0, dx));
-        } catch (error) {
-            console.warn("ADX calculation error:", error);
-            return 25;
+        let tr = [], plusDM = [], minusDM = [];
+        for (let i = 1; i < data.length; i++) {
+            const h = data[i].h, l = data[i].l;
+            const ph = data[i-1].h, pl = data[i-1].l, pc = data[i-1].c;
+            tr.push(Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc)));
+            const up = h - ph, down = pl - l;
+            if (up > down && up > 0) { plusDM.push(up); minusDM.push(0); }
+            else if (down > up && down > 0) { plusDM.push(0); minusDM.push(down); }
+            else { plusDM.push(0); minusDM.push(0); }
         }
+        if (tr.length < period) return 25;
+        
+        let avgTR = tr.slice(0, period).reduce((a, b) => a + b, 0) / period;
+        let avgPlus = plusDM.slice(0, period).reduce((a, b) => a + b, 0) / period;
+        let avgMinus = minusDM.slice(0, period).reduce((a, b) => a + b, 0) / period;
+        
+        for (let i = period; i < tr.length; i++) {
+            avgTR = (avgTR * (period - 1) + tr[i]) / period;
+            avgPlus = (avgPlus * (period - 1) + plusDM[i]) / period;
+            avgMinus = (avgMinus * (period - 1) + minusDM[i]) / period;
+        }
+        
+        const plusDI = (avgPlus / avgTR) * 100;
+        const minusDI = (avgMinus / avgTR) * 100;
+        const dx = Math.abs(plusDI - minusDI) / (plusDI + minusDI) * 100;
+        return Math.min(100, Math.max(0, dx));
     }
     
-    function updateADXUI(adxValue) {
-        const adxElem = document.getElementById('adx-status');
-        const adxValueElem = document.getElementById('adx-value');
-        const adxBar = document.getElementById('adx-bar');
-        const adxRecommendation = document.getElementById('adx-recommendation');
+    // Core SMC Calculation - STATIC SL based on structure
+    function calculateSMC(currentPrice) {
+        if (candleData.length < 30) return;
         
-        if (!adxElem || !adxValueElem) return;
-        
-        adxValueElem.innerText = adxValue.toFixed(1);
-        adxBar.style.width = Math.min(100, (adxValue / 60) * 100) + "%";
-        
-        let statusClass = "";
-        let recommendationText = "";
-        let barColor = "";
-        
-        if (adxValue < 20) {
-            statusClass = "ranging";
-            barColor = "var(--silver-dark)";
-            recommendationText = "⚠️ RANGING MARKET (ADX < 20) - Akurasi rendah (58%). Hindari entry baru, tunggu breakout.";
-        } else if (adxValue >= 20 && adxValue < 25) {
-            statusClass = "weak";
-            barColor = "var(--gold)";
-            recommendationText = "⚡ WEAK TREND (ADX 20-25) - Akurasi sedang. Konfirmasi dengan SMC signal yang kuat.";
-        } else if (adxValue >= 25 && adxValue < 40) {
-            statusClass = "strong";
-            barColor = "var(--accent)";
-            recommendationText = "✅ STRONG TREND (ADX > 25) - Akurasi tinggi (76%). Ideal untuk entry setelah BOS.";
-        } else {
-            statusClass = "strong";
-            barColor = "var(--accent)";
-            recommendationText = "🔥 VERY STRONG TREND (ADX > 40) - Akurasi sangat tinggi. Entry optimal di FVG.";
-        }
-        
-        // Tambahkan info EMA34 ke rekomendasi jika tersedia
-        let emaInfo = "";
-        if (engine.ema34 > 0) {
-            if (engine.isAboveEMA34) {
-                emaInfo = " | EMA34: BULLISH (harga > EMA)";
-            } else {
-                emaInfo = " | EMA34: BEARISH (harga < EMA)";
-            }
-        }
-        
-        adxElem.className = `adx-status ${statusClass}`;
-        adxBar.style.background = barColor;
-        adxRecommendation.className = `adx-recommendation ${statusClass}`;
-        adxRecommendation.innerHTML = `📊 ADX: ${adxValue.toFixed(1)} - ${recommendationText}${emaInfo}`;
-        
-        engine.adx = adxValue;
-        engine.isTrending = adxValue >= engine.adxThreshold;
-        
-        // Alert when ADX crosses threshold
-        if (engine.previousAdx < 25 && adxValue >= 25 && Date.now() - lastAdxAlertTime > 10000) {
-            showAlert(`📈 ADX: ${engine.previousAdx.toFixed(1)} → ${adxValue.toFixed(1)} | Market now TRENDING! Akurasi meningkat ke 76%`, "adx");
-            lastAdxAlertTime = Date.now();
-            adxElem.classList.add('adx-flash');
-            setTimeout(() => adxElem.classList.remove('adx-flash'), 300);
-        } else if (engine.previousAdx >= 25 && adxValue < 25 && Date.now() - lastAdxAlertTime > 10000) {
-            showAlert(`⚠️ ADX: ${engine.previousAdx.toFixed(1)} → ${adxValue.toFixed(1)} | Market now RANGING. Akurasi turun ke 58%`, "adx");
-            lastAdxAlertTime = Date.now();
-            adxElem.classList.add('adx-flash');
-            setTimeout(() => adxElem.classList.remove('adx-flash'), 300);
-        }
-        
-        engine.previousAdx = adxValue;
-    }
-    
-    function detectLiquiditySweep(currentPrice) {
-        if (!engine.swingHigh || !engine.swingLow) return false;
-        
-        const buffer = currentPair === "XAUUSDT" ? 0.5 : 50;
-        let sweepDetected = false;
-        let sweepSide = null;
-        
-        if (currentPrice > engine.swingHigh + buffer && !engine.sweepDetected) {
-            sweepDetected = true;
-            sweepSide = "SELL";
-            engine.sweepPrice = currentPrice;
-            engine.lastSweepTime = Date.now();
-            engine.liquiditySide = "SELL";
-            
-            if (Date.now() - lastSweepAlertTime > 5000) {
-                showAlert("🔥 LIQUIDITY SWEEP | HIGH TAKEN @ " + currentPrice.toFixed(getPrecision()), "sweep");
-                lastSweepAlertTime = Date.now();
-            }
-        }
-        else if (currentPrice < engine.swingLow - buffer && !engine.sweepDetected) {
-            sweepDetected = true;
-            sweepSide = "BUY";
-            engine.sweepPrice = currentPrice;
-            engine.lastSweepTime = Date.now();
-            engine.liquiditySide = "BUY";
-            
-            if (Date.now() - lastSweepAlertTime > 5000) {
-                showAlert("🔥 LIQUIDITY SWEEP | LOW TAKEN @ " + currentPrice.toFixed(getPrecision()), "sweep");
-                lastSweepAlertTime = Date.now();
-            }
-        }
-        
-        if (sweepDetected) {
-            engine.sweepDetected = true;
-            engine.bosConfirmed = false;
-            updateLiquidityUI("SWEEP", sweepSide);
-            return true;
-        }
-        return false;
-    }
-    
-    function confirmBOS(currentPrice) {
-        if (!engine.sweepDetected || engine.bosConfirmed) return false;
-        
-        let bosConfirmed = false;
-        let bosSide = null;
-        
-        if (engine.liquiditySide === "BUY" && currentPrice > engine.swingHigh) {
-            bosConfirmed = true;
-            bosSide = "BULLISH";
-            engine.bosPrice = currentPrice;
-            if (Date.now() - lastBosAlertTime > 5000) {
-                showAlert("✅ BOS CONFIRMED | BULLISH STRUCTURE BREAK", "bos");
-                lastBosAlertTime = Date.now();
-            }
-        }
-        else if (engine.liquiditySide === "SELL" && currentPrice < engine.swingLow) {
-            bosConfirmed = true;
-            bosSide = "BEARISH";
-            engine.bosPrice = currentPrice;
-            if (Date.now() - lastBosAlertTime > 5000) {
-                showAlert("✅ BOS CONFIRMED | BEARISH STRUCTURE BREAK", "bos");
-                lastBosAlertTime = Date.now();
-            }
-        }
-        
-        if (bosConfirmed) {
-            engine.bosConfirmed = true;
-            engine.bias = bosSide === "BULLISH" ? "BULLISH_BOS" : "BEARISH_BOS";
-            updateLiquidityUI("BOS", bosSide);
-            highlightFVGEntry();
-            return true;
-        }
-        return false;
-    }
-    
-    function highlightFVGEntry() {
-        engine.fvgEntryHighlight = true;
-        const fvgElements = ['r618', 'r705', 'r79'];
-        fvgElements.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                el.classList.add('fvg-highlight');
-                setTimeout(() => el.classList.remove('fvg-highlight'), 1500);
-            }
-        });
-    }
-    
-    function resetSweepStatusIfNewStructure() {
-        if (engine.swingHigh !== engine.lastSwingHigh || engine.swingLow !== engine.lastSwingLow) {
-            if (engine.sweepDetected && !engine.bosConfirmed) {
-                engine.sweepDetected = false;
-                engine.bosConfirmed = false;
-                engine.liquiditySide = null;
-                updateLiquidityUI("RESET", null);
-            }
-            engine.lastSwingHigh = engine.swingHigh;
-            engine.lastSwingLow = engine.swingLow;
-        }
-    }
-    
-    function updateLiquidityUI(status, side) {
-        const liquidityElem = document.getElementById('liquidity-status');
-        if (status === "SWEEP") {
-            liquidityElem.innerHTML = side === "BUY" ? "🔥 SWEEP DETECTED | BEAR TRAP" : "🔥 SWEEP DETECTED | BULL TRAP";
-            liquidityElem.className = "liquidity-status sweep";
-        } else if (status === "BOS") {
-            liquidityElem.innerHTML = side === "BULLISH" ? "✅ BOS CONFIRMED | BULLISH" : "✅ BOS CONFIRMED | BEARISH";
-            liquidityElem.className = "liquidity-status bos";
-        } else {
-            liquidityElem.innerHTML = "⚡ AWAITING SWEEP";
-            liquidityElem.className = "liquidity-status";
-        }
-    }
-    
-    function calculateSMC() {
-        if (!candleData.length || candleData.length < 30) return;
-        const lookback = Math.min(candleData.length, 55);
+        const lookback = getLookbackPeriod();
         const slice = candleData.slice(-lookback);
         const swingHigh = Math.max(...slice.map(c => c.h));
         const swingLow = Math.min(...slice.map(c => c.l));
-        const lastCandle = candleData[candleData.length - 1];
-        const lastClose = lastCandle.c;
+        const price = currentPrice || candleData[candleData.length - 1].c;
         const rangeVal = swingHigh - swingLow;
+        
         if (rangeVal <= 0) return;
         
-        const isBullish = lastClose > (swingHigh + swingLow) / 2;
-        
+        // Check if structure changed
+        const structureChanged = (swingHigh !== engine.swingHigh || swingLow !== engine.swingLow);
         engine.swingHigh = swingHigh;
         engine.swingLow = swingLow;
+        engine.rangeVal = rangeVal;
         
-        resetSweepStatusIfNewStructure();
-        
-        if (engine.bosConfirmed) {
-            // keep BOS bias
-        } else {
-            engine.bias = isBullish ? "BULLISH" : "BEARISH";
+        // Reset sweep if structure changed
+        if (structureChanged && engine.sweepDetected && !engine.bosConfirmed) {
+            engine.sweepDetected = false;
+            engine.bosConfirmed = false;
+            engine.liquiditySide = null;
+            document.getElementById('liquidity-status').innerHTML = "⚡ AWAITING SWEEP";
+            document.getElementById('liquidity-status').className = "liquidity-status";
         }
+        
+        // Determine bias
+        const isBullish = price > (swingHigh + swingLow) / 2;
+        if (!engine.bosConfirmed) engine.bias = isBullish ? "BULLISH" : "BEARISH";
         
         const isBullishForLevels = engine.bosConfirmed ? (engine.bias === "BULLISH_BOS") : isBullish;
         
+        // Calculate STATIC levels (based on structure, not current price)
         if (isBullishForLevels) {
-            engine.f618 = swingLow + (rangeVal * 0.618);
-            engine.ote = swingLow + (rangeVal * 0.705);
-            engine.deep = swingLow + (rangeVal * 0.79);
-            engine.sl = swingLow - (rangeVal * 0.02);
-            engine.tp = swingHigh + (rangeVal * 0.23);
+            engine.staticF618 = swingLow + (rangeVal * 0.618);
+            engine.staticOTE = swingLow + (rangeVal * 0.705);
+            engine.staticDeep = swingLow + (rangeVal * 0.79);
+            engine.staticTP = swingHigh + (rangeVal * 0.23);
+            engine.staticSL = swingLow - (rangeVal * 0.02);
         } else {
-            engine.f618 = swingHigh - (rangeVal * 0.618);
-            engine.ote = swingHigh - (rangeVal * 0.705);
-            engine.deep = swingHigh - (rangeVal * 0.79);
-            engine.sl = swingHigh + (rangeVal * 0.02);
-            engine.tp = swingLow - (rangeVal * 0.23);
+            engine.staticF618 = swingHigh - (rangeVal * 0.618);
+            engine.staticOTE = swingHigh - (rangeVal * 0.705);
+            engine.staticDeep = swingHigh - (rangeVal * 0.79);
+            engine.staticTP = swingLow - (rangeVal * 0.23);
+            engine.staticSL = swingHigh + (rangeVal * 0.02);
         }
         
-        const currentPrice = lastClose;
-        const distanceToTP = Math.abs(currentPrice - engine.tp);
-        if (currentPair === "XAUUSDT") engine.range = distanceToTP * 10;
-        else engine.range = distanceToTP;
+        // Update active levels with static values
+        engine.f618 = engine.staticF618;
+        engine.ote = engine.staticOTE;
+        engine.deep = engine.staticDeep;
+        engine.tp = engine.staticTP;
+        engine.sl = engine.staticSL;
+        
+        // Dynamic range (only for visualization)
+        const distanceToTP = Math.abs(price - engine.tp);
+        engine.range = currentPair === "XAUUSDT" ? distanceToTP * 10 : distanceToTP;
     }
     
-    function updateUI(currentPrice, forceRefresh = false) {
-        const prec = getPrecision();
-        const pFixed = currentPrice.toFixed(prec);
-        const parts = pFixed.split('.');
-        const integerPart = parts[0];
-        const decimalPart = parts[1] || "00";
-        const priceHtml = `${integerPart}<span class="price-decimal">.${decimalPart}</span>`;
-        const priceElem = document.getElementById('live-price');
-        priceElem.innerHTML = priceHtml;
+    // Liquidity Sweep Detection
+    function detectLiquiditySweep(currentPrice) {
+        if (!engine.swingHigh || !engine.swingLow) return false;
+        const buffer = getSweepBuffer();
         
-        if (currentPrice > lastPrice && lastPrice !== 0) priceElem.style.color = "var(--accent)";
-        else if (currentPrice < lastPrice && lastPrice !== 0) priceElem.style.color = "var(--danger)";
-        else priceElem.style.color = "#fff";
-        
-        priceElem.classList.add('price-flash');
-        setTimeout(() => priceElem.classList.remove('price-flash'), 100);
-        
-        document.getElementById('r618').innerText = engine.f618.toFixed(prec);
-        document.getElementById('r705').innerText = engine.ote.toFixed(prec);
-        document.getElementById('r79').innerText = engine.deep.toFixed(prec);
-        document.getElementById('rSL').innerText = engine.sl.toFixed(prec);
-        document.getElementById('rTP').innerText = engine.tp.toFixed(prec);
-        
-        const rangePips = (engine.range).toFixed(1);
-        document.getElementById('rRange').innerText = rangePips;
-        
-        const rsiVal = computeRSI(currentPrice);
-        lastRSI = rsiVal;
-        const rsiBar = document.getElementById('rsi-bar');
-        const rsiTxt = document.getElementById('rsi-val');
-        rsiTxt.innerText = rsiVal.toFixed(2);
-        rsiBar.style.width = Math.min(100, Math.max(0, rsiVal)) + "%";
-        
-        if (rsiVal > 70) {
-            rsiBar.style.background = "var(--danger)";
-            rsiTxt.style.color = "var(--danger)";
-        } else if (rsiVal < 30) {
-            rsiBar.style.background = "var(--accent)";
-            rsiTxt.style.color = "var(--accent)";
-        } else {
-            rsiBar.style.background = "var(--silver-medium)";
-            rsiTxt.style.color = "var(--silver-bright)";
+        if (currentPrice > engine.swingHigh + buffer && !engine.sweepDetected) {
+            engine.sweepDetected = true;
+            engine.liquiditySide = "SELL";
+            engine.bosConfirmed = false;
+            engine.sweepPrice = currentPrice;
+            if (Date.now() - lastSweepAlertTime > 5000) {
+                showAlert("🔥 LIQUIDITY SWEEP | HIGH TAKEN", "sweep");
+                lastSweepAlertTime = Date.now();
+            }
+            document.getElementById('liquidity-status').innerHTML = "🔥 SWEEP DETECTED | BULL TRAP";
+            document.getElementById('liquidity-status').className = "liquidity-status sweep";
+            return true;
         }
-        
-        // ADX Update
-        const adxVal = computeADX();
-        updateADXUI(adxVal);
-        
-        // EMA34 Update - BARU DITAMBAHKAN
-        updateEMA34UI(currentPrice);
-        
-        const sysDiv = document.getElementById('sys-status');
-        let statusText = "";
-        if (engine.bosConfirmed) {
-            statusText = engine.bias === "BULLISH_BOS" ? "BOS✓ BULL" : "BOS✓ BEAR";
-            sysDiv.style.color = "var(--accent)";
-        } else if (engine.sweepDetected) {
-            statusText = engine.liquiditySide === "BUY" ? "SWEEP_LOW ◆" : "SWEEP_HIGH ◇";
-            sysDiv.style.color = "var(--orange)";
-        } else {
-            statusText = engine.bias === "BULLISH" ? "BULL_FLOW ◆" : (engine.bias === "BEARISH" ? "BEAR_FLOW ◇" : "NEUTRAL");
-            sysDiv.style.color = engine.bias === "BULLISH" ? "var(--accent)" : (engine.bias === "BEARISH" ? "var(--danger)" : "var(--gold)");
+        else if (currentPrice < engine.swingLow - buffer && !engine.sweepDetected) {
+            engine.sweepDetected = true;
+            engine.liquiditySide = "BUY";
+            engine.bosConfirmed = false;
+            engine.sweepPrice = currentPrice;
+            if (Date.now() - lastSweepAlertTime > 5000) {
+                showAlert("🔥 LIQUIDITY SWEEP | LOW TAKEN", "sweep");
+                lastSweepAlertTime = Date.now();
+            }
+            document.getElementById('liquidity-status').innerHTML = "🔥 SWEEP DETECTED | BEAR TRAP";
+            document.getElementById('liquidity-status').className = "liquidity-status sweep";
+            return true;
         }
-        sysDiv.innerHTML = statusText;
-        
-        let biasText = "";
-        if (engine.bosConfirmed) {
-            biasText = engine.bias === "BULLISH_BOS" ? "BOS BULLISH ✓" : "BOS BEARISH ✓";
-        } else if (engine.sweepDetected) {
-            biasText = engine.liquiditySide === "BUY" ? "SWEEP (BUY ZONE)" : "SWEEP (SELL ZONE)";
-        } else {
-            biasText = engine.bias === "BULLISH" ? "PREMIUM ZONE" : "DISCOUNT ZONE";
-        }
-        document.getElementById('pattern-val').innerText = biasText;
-        document.getElementById('pattern-val').style.color = engine.bosConfirmed ? "var(--accent)" : (engine.sweepDetected ? "var(--orange)" : "var(--blue)");
-        
-        const fvgElem = document.getElementById('fvg-status');
-        if (engine.bosConfirmed) {
-            fvgElem.innerText = "📈 ENTRY ZONE: FVG";
-            fvgElem.style.color = "var(--accent)";
-        } else if (engine.sweepDetected) {
-            fvgElem.innerText = "🎯 WAITING BOS";
-            fvgElem.style.color = "var(--orange)";
-        } else {
-            fvgElem.innerText = engine.bias === "BULLISH" ? "FVG: BULL IMBALANCE" : "FVG: BEAR IMBALANCE";
-            fvgElem.style.color = engine.bias === "BULLISH" ? "var(--accent)" : "var(--danger)";
-        }
-        
-        lastPrice = currentPrice;
+        return false;
     }
     
+    // BOS Confirmation
+    function confirmBOS(currentPrice) {
+        if (!engine.sweepDetected || engine.bosConfirmed) return false;
+        
+        if (engine.liquiditySide === "BUY" && currentPrice > engine.swingHigh) {
+            engine.bosConfirmed = true;
+            engine.bias = "BULLISH_BOS";
+            if (Date.now() - lastBosAlertTime > 5000) {
+                showAlert("✅ BOS CONFIRMED | BULLISH", "bos");
+                lastBosAlertTime = Date.now();
+            }
+            document.getElementById('liquidity-status').innerHTML = "✅ BOS CONFIRMED | BULLISH";
+            document.getElementById('liquidity-status').className = "liquidity-status bos";
+            document.getElementById('fvg-status').innerHTML = "📈 ENTRY ZONE: FVG";
+            document.getElementById('fvg-status').style.color = "var(--accent)";
+            ['r618', 'r705', 'r79'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('fvg-highlight');
+                setTimeout(() => el.classList.remove('fvg-highlight'), 1500);
+            });
+            return true;
+        }
+        else if (engine.liquiditySide === "SELL" && currentPrice < engine.swingLow) {
+            engine.bosConfirmed = true;
+            engine.bias = "BEARISH_BOS";
+            if (Date.now() - lastBosAlertTime > 5000) {
+                showAlert("✅ BOS CONFIRMED | BEARISH", "bos");
+                lastBosAlertTime = Date.now();
+            }
+            document.getElementById('liquidity-status').innerHTML = "✅ BOS CONFIRMED | BEARISH";
+            document.getElementById('liquidity-status').className = "liquidity-status bos";
+            document.getElementById('fvg-status').innerHTML = "📈 ENTRY ZONE: FVG";
+            document.getElementById('fvg-status').style.color = "var(--accent)";
+            ['r618', 'r705', 'r79'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('fvg-highlight');
+                setTimeout(() => el.classList.remove('fvg-highlight'), 1500);
+            });
+            return true;
+        }
+        return false;
+    }
+    
+    // Update UI with requestAnimationFrame for smooth rendering
+    let pendingUpdate = false;
+    function updateUI(currentPrice) {
+        if (pendingUpdate) return;
+        pendingUpdate = true;
+        
+        requestAnimationFrame(() => {
+            const prec = getPrecision();
+            
+            // Price display
+            const priceFixed = currentPrice.toFixed(prec);
+            const parts = priceFixed.split('.');
+            document.getElementById('live-price').innerHTML = `${parts[0]}<span class="price-decimal">.${parts[1] || '00'}</span>`;
+            
+            // Price color flash
+            const priceElem = document.getElementById('live-price');
+            if (currentPrice > lastPrice && lastPrice !== 0) priceElem.style.color = "var(--accent)";
+            else if (currentPrice < lastPrice && lastPrice !== 0) priceElem.style.color = "var(--danger)";
+            else priceElem.style.color = "#fff";
+            priceElem.classList.add('price-flash');
+            setTimeout(() => priceElem.classList.remove('price-flash'), 100);
+            
+            // SMC Levels
+            document.getElementById('r618').innerText = engine.f618.toFixed(prec);
+            document.getElementById('r705').innerText = engine.ote.toFixed(prec);
+            document.getElementById('r79').innerText = engine.deep.toFixed(prec);
+            document.getElementById('rSL').innerText = engine.sl.toFixed(prec);
+            document.getElementById('rTP').innerText = engine.tp.toFixed(prec);
+            
+            // Range with animation
+            const rangeElem = document.getElementById('rRange');
+            const newRange = engine.range.toFixed(1);
+            if (rangeElem.innerText !== newRange) {
+                rangeElem.classList.add('range-pulse');
+                setTimeout(() => rangeElem.classList.remove('range-pulse'), 300);
+            }
+            rangeElem.innerText = newRange;
+            
+            // RSI
+            const rsiVal = computeRSI(currentPrice);
+            document.getElementById('rsi-val').innerText = rsiVal.toFixed(2);
+            const rsiBar = document.getElementById('rsi-bar');
+            rsiBar.style.width = Math.min(100, Math.max(0, rsiVal)) + "%";
+            if (rsiVal > 70) { rsiBar.style.background = "var(--danger)"; document.getElementById('rsi-val').style.color = "var(--danger)"; }
+            else if (rsiVal < 30) { rsiBar.style.background = "var(--accent)"; document.getElementById('rsi-val').style.color = "var(--accent)"; }
+            else { rsiBar.style.background = "var(--silver-medium)"; document.getElementById('rsi-val').style.color = "var(--silver-bright)"; }
+            
+            // ADX
+            const adxVal = computeADX();
+            document.getElementById('adx-value').innerText = adxVal.toFixed(1);
+            document.getElementById('adx-bar').style.width = Math.min(100, (adxVal / 60) * 100) + "%";
+            
+            let adxClass = "", adxText = "";
+            if (adxVal < 20) { adxClass = "ranging"; adxText = "⚠️ RANGING - Tunggu breakout"; }
+            else if (adxVal < 25) { adxClass = "weak"; adxText = "⚡ WEAK TREND - Konfirmasi sinyal"; }
+            else if (adxVal < 40) { adxClass = "strong"; adxText = "✅ STRONG TREND - Akurasi tinggi"; }
+            else { adxClass = "strong"; adxText = "🔥 VERY STRONG TREND - Entry optimal"; }
+            
+            document.getElementById('adx-status').className = `adx-status ${adxClass}`;
+            document.getElementById('adx-recommendation').className = `adx-recommendation ${adxClass}`;
+            
+            let emaInfo = engine.ema34 > 0 ? (engine.isAboveEMA34 ? " | EMA34: BULLISH" : " | EMA34: BEARISH") : "";
+            document.getElementById('adx-recommendation').innerHTML = `📊 ADX: ${adxVal.toFixed(1)} - ${adxText}${emaInfo}`;
+            
+            // EMA34
+            const emaVal = calculateEMA34();
+            if (emaVal && !isNaN(emaVal)) {
+                engine.ema34 = emaVal;
+                engine.isAboveEMA34 = currentPrice > emaVal;
+                document.getElementById('ema34-value').innerText = emaVal.toFixed(prec);
+                const emaStatus = document.getElementById('ema34-status');
+                if (engine.isAboveEMA34) {
+                    emaStatus.className = "ema34-status bullish";
+                    document.getElementById('ema34-value').style.color = "var(--accent)";
+                } else {
+                    emaStatus.className = "ema34-status bearish";
+                    document.getElementById('ema34-value').style.color = "var(--danger)";
+                }
+            }
+            
+            // Status display
+            const sysDiv = document.getElementById('sys-status');
+            if (engine.bosConfirmed) {
+                sysDiv.innerHTML = engine.bias === "BULLISH_BOS" ? "BOS✓ BULL" : "BOS✓ BEAR";
+                sysDiv.style.color = "var(--accent)";
+                document.getElementById('pattern-val').innerText = engine.bias === "BULLISH_BOS" ? "BOS BULLISH ✓" : "BOS BEARISH ✓";
+                document.getElementById('pattern-val').style.color = "var(--accent)";
+            } else if (engine.sweepDetected) {
+                sysDiv.innerHTML = engine.liquiditySide === "BUY" ? "SWEEP_LOW ◆" : "SWEEP_HIGH ◇";
+                sysDiv.style.color = "var(--orange)";
+                document.getElementById('pattern-val').innerText = engine.liquiditySide === "BUY" ? "SWEEP (BUY ZONE)" : "SWEEP (SELL ZONE)";
+                document.getElementById('pattern-val').style.color = "var(--orange)";
+            } else {
+                sysDiv.innerHTML = engine.bias === "BULLISH" ? "BULL_FLOW ◆" : (engine.bias === "BEARISH" ? "BEAR_FLOW ◇" : "NEUTRAL");
+                sysDiv.style.color = engine.bias === "BULLISH" ? "var(--accent)" : (engine.bias === "BEARISH" ? "var(--danger)" : "var(--gold)");
+                document.getElementById('pattern-val').innerText = engine.bias === "BULLISH" ? "PREMIUM ZONE" : "DISCOUNT ZONE";
+                document.getElementById('pattern-val').style.color = engine.bias === "BULLISH" ? "var(--accent)" : "var(--danger)";
+            }
+            
+            // FVG Status
+            if (!engine.bosConfirmed && !engine.sweepDetected) {
+                document.getElementById('fvg-status').innerHTML = engine.bias === "BULLISH" ? "FVG: BULL IMBALANCE" : "FVG: BEAR IMBALANCE";
+                document.getElementById('fvg-status').style.color = engine.bias === "BULLISH" ? "var(--accent)" : "var(--danger)";
+            } else if (engine.sweepDetected && !engine.bosConfirmed) {
+                document.getElementById('fvg-status').innerHTML = "🎯 WAITING BOS";
+                document.getElementById('fvg-status').style.color = "var(--orange)";
+            }
+            
+            lastPrice = currentPrice;
+            pendingUpdate = false;
+        });
+    }
+    
+    // Fetch klines data
     async function fetchKlines() {
         try {
-            const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${currentPair}&interval=${currentTF}&limit=120`;
+            const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${currentPair}&interval=${currentTF}&limit=150`;
             const resp = await fetch(url);
             const data = await resp.json();
-            if (!Array.isArray(data)) throw new Error("Invalid klines");
+            if (!Array.isArray(data)) throw new Error("Invalid data");
             candleData = data.map(d => ({
-                o: parseFloat(d[1]),
-                h: parseFloat(d[2]),
-                l: parseFloat(d[3]),
-                c: parseFloat(d[4]),
-                t: d[0]
+                o: parseFloat(d[1]), h: parseFloat(d[2]), l: parseFloat(d[3]), c: parseFloat(d[4]), t: d[0]
             }));
-            calculateSMC();
-            if (candleData.length) {
-                const lastCandlePrice = candleData[candleData.length-1].c;
-                updateUI(lastCandlePrice);
-            }
             return true;
         } catch (err) {
-            console.error("Klines fetch error", err);
+            console.error("Fetch error:", err);
             return false;
         }
     }
     
+    // WebSocket for real-time price
     function initWebSocket() {
         if (wsPrice) wsPrice.close();
-        const streamName = `${currentPair.toLowerCase()}@aggTrade`;
-        const wsUrl = `wss://fstream.binance.com/ws/${streamName}`;
-        wsPrice = new WebSocket(wsUrl);
+        const stream = `${currentPair.toLowerCase()}@aggTrade`;
+        wsPrice = new WebSocket(`wss://fstream.binance.com/ws/${stream}`);
         
         wsPrice.onopen = () => {
             document.getElementById('sys-status').innerHTML = "LIVE ⚡";
             document.getElementById('sys-status').style.color = "var(--accent)";
         };
         
-        wsPrice.onmessage = (event) => {
+        wsPrice.onmessage = (e) => {
             try {
-                const msg = JSON.parse(event.data);
+                const msg = JSON.parse(e.data);
                 if (msg && typeof msg.p !== 'undefined') {
-                    const tradePrice = parseFloat(msg.p);
-                    if (!isNaN(tradePrice) && tradePrice > 0) {
-                        calculateSMC();
-                        detectLiquiditySweep(tradePrice);
-                        confirmBOS(tradePrice);
-                        updateUI(tradePrice);
+                    const price = parseFloat(msg.p);
+                    if (!isNaN(price) && price > 0) {
+                        calculateSMC(price);
+                        detectLiquiditySweep(price);
+                        confirmBOS(price);
+                        updateUI(price);
                     }
                 }
-            } catch (e) {}
+            } catch (err) {}
         };
         
-        wsPrice.onerror = () => {
-            document.getElementById('sys-status').innerHTML = "WS_RECONNECT";
-        };
-        
-        wsPrice.onclose = () => {
-            setTimeout(() => {
-                if (wsPrice?.readyState !== WebSocket.OPEN) initWebSocket();
-            }, 2000);
-        };
+        wsPrice.onclose = () => setTimeout(() => initWebSocket(), 2000);
     }
     
+    // Full reload on pair/timeframe change
     async function fullReload() {
         document.getElementById('main-terminal').classList.add('syncing');
         document.getElementById('sys-status').innerHTML = "SYNC...";
+        
         try {
             await fetchKlines();
+            if (candleData.length) {
+                const lastPriceData = candleData[candleData.length-1].c;
+                calculateSMC(lastPriceData);
+                updateUI(lastPriceData);
+            }
             initWebSocket();
+            
+            // Update active buttons
             document.querySelectorAll('.btn-tab').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`btn-${currentPair}`)?.classList.add('active');
-            const tfMap = { '5m':'tf-5m', '15m':'tf-15m', '1h':'tf-1h' };
-            document.getElementById(tfMap[currentTF])?.classList.add('active');
+            document.querySelectorAll(`[data-pair="${currentPair}"]`).forEach(btn => btn.classList.add('active'));
+            document.querySelectorAll(`[data-tf="${currentTF}"]`).forEach(btn => btn.classList.add('active'));
         } catch (err) {
             console.error(err);
         } finally {
@@ -1155,13 +821,7 @@
         }
     }
     
-    window.changeMarket = function(pair) {
-        if (pair === currentPair) return;
-        currentPair = pair;
-        localStorage.setItem('lastPair', pair);
-        fullReload();
-    };
-    
+    // Timeframe change handler
     window.changeTF = function(tf) {
         if (tf === currentTF) return;
         currentTF = tf;
@@ -1169,43 +829,43 @@
         fullReload();
     };
     
-    function bindUIEvents() {
+    // Pair change handler
+    window.changeMarket = function(pair) {
+        if (pair === currentPair) return;
+        currentPair = pair;
+        localStorage.setItem('lastPair', pair);
+        fullReload();
+    };
+    
+    // Clock and session
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('clock-module').innerText = now.toLocaleTimeString('id-ID');
+        document.getElementById('date-display').innerText = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+        
+        const hour = now.getHours();
+        let session = "ASIA";
+        if (hour >= 7 && hour < 14) session = "ASIA";
+        else if (hour >= 14 && hour < 20) session = "LONDON";
+        else session = "NY_VOL";
+        document.getElementById('session-tag').innerText = session;
+    }
+    
+    // Event binding
+    function bindEvents() {
         document.querySelectorAll('[data-pair]').forEach(btn => {
             btn.addEventListener('click', () => changeMarket(btn.getAttribute('data-pair')));
         });
         document.querySelectorAll('[data-tf]').forEach(btn => {
             btn.addEventListener('click', () => changeTF(btn.getAttribute('data-tf')));
         });
-        window.changeMarket = changeMarket;
-        window.changeTF = changeTF;
     }
     
-    function updateClockAndSession() {
-        const now = new Date();
-        const hours = now.getHours();
-        const minutes = now.getMinutes();
-        const seconds = now.getSeconds();
-        const timeStr = `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
-        document.getElementById('clock-module').innerText = timeStr;
-        const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-        document.getElementById('date-display').innerText = dateStr;
-        let session = "ASIA";
-        if (hours >= 7 && hours < 14) session = "ASIA";
-        else if (hours >= 14 && hours < 20) session = "LONDON";
-        else session = "NY_VOL";
-        document.getElementById('session-tag').innerText = session;
-    }
-    
+    // Initialize
     async function init() {
-        bindUIEvents();
+        bindEvents();
         await fullReload();
-        setInterval(updateClockAndSession, 1000);
-        setInterval(() => {
-            if (candleData.length && lastPrice > 0) {
-                calculateSMC();
-                updateUI(lastPrice);
-            }
-        }, 4000);
+        setInterval(updateClock, 1000);
     }
     
     init();
