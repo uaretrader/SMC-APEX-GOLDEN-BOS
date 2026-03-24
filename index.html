@@ -877,7 +877,7 @@
         updateEMA34UI(currentPrice);
         
         const sysDiv = document.getElementById('sys-status');
-        sysDiv.innerHTML = engine.bosConfirmed ? "BOS✓ " + (engine.bias.includes("BULL") ? "BULL" : "BEAR") : (engine.sweepDetected ? "SWEEP ◆" : "FLOW ◇");
+        sysDiv.innerHTML = engine.bosConfirmed ? "BOS✓ " + (engine.bias.includes("BULL") ? "BULL" : "BEAR") : (engine.sweepDetected ? "SWEEP ◆" : "「•」");
         sysDiv.style.color = engine.bias.includes("BULL") ? "var(--accent)" : "var(--danger)";
         
         document.getElementById('pattern-val').innerText = engine.bias.replace('_', ' ');
