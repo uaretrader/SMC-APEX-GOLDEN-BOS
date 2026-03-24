@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SMC APEX v13.0.0 | GOLDEN STANDARD + LIQSWEEP + ADX FILTER + EMA34</title>
+    <title>SMC APEX v13.0.0 | URTRADER</title>
     <style>
-        /* CSS TETAP SAMA SESUAI PERMINTAAN */
+        /* CSS SAMA SEPERTI SEBELUMNYA (tidak berubah) */
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;800&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         :root { --bg: #010101; --accent: #00ffaa; --gold: #ffcc00; --danger: #ff4757; --blue: #00d4ff; --purple: #aa66ff; --orange: #ff884d; --border: rgba(0, 255, 170, 0.2); --silver-bright: #e0e0e0; --silver-medium: #c0c0c0; --silver-dark: #a9a9a9; --gold-dim: rgba(255, 204, 0, 0.12); --card-bg: #050505; }
@@ -66,6 +66,8 @@
         .copied { color: #fff !important; text-shadow: 0 0 8px var(--accent); transition: 0.1s; }
         .toast-msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1a1a1a; color: var(--accent); padding: 6px 14px; border-radius: 40px; font-size: 0.7rem; font-family: 'JetBrains Mono'; z-index: 999; pointer-events: none; backdrop-filter: blur(10px); border: 1px solid var(--accent); opacity: 0; transition: opacity 0.2s; }
         @keyframes pulse { 0% { opacity: 0.5; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+        @keyframes flashPrice { 0% { opacity: 0.6; } 100% { opacity: 1; } }
+        .price-flash { animation: flashPrice 0.08s 2; }
     </style>
 </head>
 <body>
@@ -115,7 +117,7 @@
             <div class="data-item" onclick="smartCopy('r705')"><span class="data-label" style="color:var(--accent)">OTE (70.5%)</span><span class="data-val" id="r705" style="color:var(--accent)">0.00</span></div>
             <div class="data-item" onclick="smartCopy('r618')"><span class="data-label" style="color:var(--gold)">GOLDEN (61.8%)</span><span class="data-val" id="r618" style="color:var(--gold)">0.00</span></div>
             <div class="data-item" onclick="smartCopy('r79')"><span class="data-label" style="color:var(--blue)">DEEP (79.0%)</span><span class="data-val" id="r79" style="color:var(--blue)">0.00</span></div>
-            <div class="data-item" onclick="smartCopy('rSL')"><span class="data-label" style="color:var(--danger)">SL (1:2 RR)</span><span class="data-val" id="rSL" style="color:var(--danger)">0.00</span></div>
+            <div class="data-item" onclick="smartCopy('rSL')"><span class="data-label" style="color:var(--danger)">SL (65% TP DIST)</span><span class="data-val" id="rSL" style="color:var(--danger)">0.00</span></div>
         </section>
 
         <section class="terminal-box">
@@ -149,284 +151,576 @@
 <div id="toastCopy" class="toast-msg">✓ Copied to clipboard</div>
 
 <script>
-    /** * ALGORITHM REFACTOR: STANDAR TEKNIKAL XAUUSD/BTCUSD
-     * Gated logic for Smart Money Concepts (SMC) 
-     */
+    // ==================== KONFIGURASI ====================
     let currentPair = localStorage.getItem('lastPair') || "XAUUSDT";
     let currentTF = localStorage.getItem('lastTF') || "15m";
     let wsPrice = null;
     let lastPrice = 0;
     let candleData = [];
     
+    // Engine state
     let engine = { 
         f618: 0, ote: 0, deep: 0, sl: 0, tp: 0, range: 0, bias: "SCANNING",
         swingHigh: 0, swingLow: 0,
+        lastSwingHigh: 0, lastSwingLow: 0,
         sweepDetected: false, bosConfirmed: false, liquiditySide: null,
         adx: 25, ema34: 0, isTrending: false,
-        lastAlertTime: { sweep: 0, bos: 0, adx: 0 }
+        lastSweepTime: 0, lastBosTime: 0
     };
-
-    // 1. ALGORITMA: STRUKTUR PASAR (FRACTAL HIGH/LOW)
-    function calculateSMC() {
-        if (candleData.length < 50) return;
-
-        const lookback = currentTF === "5m" ? 30 : (currentTF === "1h" ? 60 : 45);
-        const data = candleData.slice(-lookback);
-        
-        // Menentukan Swing High/Low berdasarkan Wick Terluar
-        const highPrices = data.map(c => c.h);
-        const lowPrices = data.map(c => c.l);
-        const currentSwingHigh = Math.max(...highPrices);
-        const currentSwingLow = Math.min(...lowPrices);
-
-        engine.swingHigh = currentSwingHigh;
-        engine.swingLow = currentSwingLow;
-
-        const lastClose = candleData[candleData.length - 1].c;
-        const rangeVal = currentSwingHigh - currentSwingLow;
-
-        // 2. ALGORITMA: LIQUIDITY SWEEP & BOS STANDARD
-        detectSMCLogic(lastClose, currentSwingHigh, currentSwingLow);
-
-        // 3. ALGORITMA: FIBONACCI & RISK MANAGEMENT (Standard 1:2 RR)
-        const isBullish = engine.bias.includes("BULLISH");
-        
-        if (isBullish) {
-            engine.f618 = currentSwingLow + (rangeVal * 0.618);
-            engine.ote = currentSwingLow + (rangeVal * 0.705);
-            engine.deep = currentSwingLow + (rangeVal * 0.79);
-            engine.tp = currentSwingHigh + (rangeVal * 0.23);
-            // Standar SL: Di bawah Swing Low atau setara setengah jarak TP dari Entry (70.5%)
-            engine.sl = engine.ote - (Math.abs(engine.tp - engine.ote) * 0.5);
-        } else {
-            engine.f618 = currentSwingHigh - (rangeVal * 0.618);
-            engine.ote = currentSwingHigh - (rangeVal * 0.705);
-            engine.deep = currentSwingHigh - (rangeVal * 0.79);
-            engine.tp = currentSwingLow - (rangeVal * 0.23);
-            engine.sl = engine.ote + (Math.abs(engine.ote - engine.tp) * 0.5);
-        }
-        
-        engine.range = currentPair === "XAUUSDT" ? Math.abs(lastClose - engine.tp) * 10 : Math.abs(lastClose - engine.tp);
+    
+    // ==================== FUNGSI UTAMA ====================
+    function getPrecision() {
+        return currentPair === "XAUUSDT" ? 2 : 1;
     }
-
-    function detectSMCLogic(price, sHigh, sLow) {
-        const lastCandle = candleData[candleData.length - 1];
-        const buffer = currentPair === "XAUUSDT" ? 0.3 : 40;
-
-        // SWEEP: Harga melampaui sHigh/sLow tapi Close tidak menembus (Standard Tech)
-        if (lastCandle.h > sHigh && lastCandle.c <= sHigh && !engine.sweepDetected) {
-            triggerSignal("SWEEP", "SELL");
-        } else if (lastCandle.l < sLow && lastCandle.c >= sLow && !engine.sweepDetected) {
-            triggerSignal("SWEEP", "BUY");
-        }
-
-        // BOS: Harga Close menembus Struktur yang valid
-        if (engine.sweepDetected && !engine.bosConfirmed) {
-            if (engine.liquiditySide === "BUY" && price > sHigh) {
-                triggerSignal("BOS", "BULLISH");
-            } else if (engine.liquiditySide === "SELL" && price < sLow) {
-                triggerSignal("BOS", "BEARISH");
-            }
-        }
-
-        if (!engine.bosConfirmed) {
-            engine.bias = price > (sHigh + sLow) / 2 ? "BULLISH" : "BEARISH";
-        }
-    }
-
-    function triggerSignal(type, side) {
-        const now = Date.now();
-        if (type === "SWEEP" && now - engine.lastAlertTime.sweep > 10000) {
-            engine.sweepDetected = true;
-            engine.liquiditySide = side;
-            updateLiquidityUI("SWEEP", side);
-            showAlert("🔥 LIQ SWEEP: Standard " + side, "sweep");
-            engine.lastAlertTime.sweep = now;
-        } else if (type === "BOS" && now - engine.lastAlertTime.bos > 10000) {
-            engine.bosConfirmed = true;
-            engine.bias = side + "_BOS";
-            updateLiquidityUI("BOS", side);
-            showAlert("✅ BOS CONFIRMED: " + side, "bos");
-            highlightFVGEntry();
-            engine.lastAlertTime.bos = now;
-        }
-    }
-
-    // ALGORITMA: ADX & EMA34 (Trend Strength Filter)
+    
+    // ADX YANG DIPERBAIKI - MENGGUNAKAN ALGORITMA STANDAR
     function calculateADX() {
-        if (candleData.length < 30) return 25;
-        const period = 14;
-        const data = candleData.slice(-(period * 2));
-        let tr = [], dmPlus = [], dmMinus = [];
-
-        for (let i = 1; i < data.length; i++) {
-            const h = data[i].h, l = data[i].l, ph = data[i-1].h, pl = data[i-1].l, pc = data[i-1].c;
-            tr.push(Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc)));
-            dmPlus.push(h - ph > pl - l && h - ph > 0 ? h - ph : 0);
-            dmMinus.push(pl - l > h - ph && pl - l > 0 ? pl - l : 0);
+        if (!candleData.length || candleData.length < 28) {
+            return 25; // Default saat data belum cukup
         }
-
-        const smooth = (arr) => arr.slice(0, period).reduce((a,b)=>a+b)/period;
-        let atr = smooth(tr), sPlus = smooth(dmPlus), sMinus = smooth(dmMinus);
-
-        const diPlus = (sPlus / atr) * 100;
-        const diMinus = (sMinus / atr) * 100;
-        return Math.abs(diPlus - diMinus) / (diPlus + diMinus) * 100;
+        
+        try {
+            const period = 14;
+            const data = candleData.slice(-(period * 2));
+            if (data.length < period + 1) return 25;
+            
+            let tr = [];
+            let plusDM = [];
+            let minusDM = [];
+            
+            for (let i = 1; i < data.length; i++) {
+                const high = data[i].h;
+                const low = data[i].l;
+                const prevHigh = data[i-1].h;
+                const prevLow = data[i-1].l;
+                const prevClose = data[i-1].c;
+                
+                // True Range
+                const tr1 = high - low;
+                const tr2 = Math.abs(high - prevClose);
+                const tr3 = Math.abs(low - prevClose);
+                tr.push(Math.max(tr1, tr2, tr3));
+                
+                // Directional Movement
+                const upMove = high - prevHigh;
+                const downMove = prevLow - low;
+                
+                if (upMove > downMove && upMove > 0) {
+                    plusDM.push(upMove);
+                    minusDM.push(0);
+                } else if (downMove > upMove && downMove > 0) {
+                    plusDM.push(0);
+                    minusDM.push(downMove);
+                } else {
+                    plusDM.push(0);
+                    minusDM.push(0);
+                }
+            }
+            
+            if (tr.length < period) return 25;
+            
+            // Smoothing
+            let atr = 0;
+            let avgPlusDM = 0;
+            let avgMinusDM = 0;
+            
+            for (let i = 0; i < period; i++) {
+                atr += tr[i];
+                avgPlusDM += plusDM[i];
+                avgMinusDM += minusDM[i];
+            }
+            
+            atr /= period;
+            avgPlusDM /= period;
+            avgMinusDM /= period;
+            
+            for (let i = period; i < tr.length; i++) {
+                atr = (atr * (period - 1) + tr[i]) / period;
+                avgPlusDM = (avgPlusDM * (period - 1) + plusDM[i]) / period;
+                avgMinusDM = (avgMinusDM * (period - 1) + minusDM[i]) / period;
+            }
+            
+            const plusDI = (avgPlusDM / atr) * 100;
+            const minusDI = (avgMinusDM / atr) * 100;
+            const dx = (Math.abs(plusDI - minusDI) / (plusDI + minusDI)) * 100;
+            
+            return Math.min(100, Math.max(0, isNaN(dx) ? 25 : dx));
+        } catch (error) {
+            console.warn("ADX Error:", error);
+            return 25;
+        }
     }
-
-    function calculateEMA(period) {
-        if (candleData.length < period) return 0;
-        const k = 2 / (period + 1);
+    
+    // EMA34 yang akurat
+    function calculateEMA34() {
+        if (!candleData.length || candleData.length < 34) return null;
+        
+        const period = 34;
+        const multiplier = 2 / (period + 1);
         let ema = candleData[0].c;
+        
         for (let i = 1; i < candleData.length; i++) {
-            ema = (candleData[i].c - ema) * k + ema;
+            ema = (candleData[i].c - ema) * multiplier + ema;
         }
         return ema;
     }
-
-    // UI SYNC & RENDER (MENJAGA INTEGRITAS VISUAL)
-    function updateUI(price) {
-        const prec = currentPair === "XAUUSDT" ? 2 : 1;
+    
+    // RSI 14
+    function computeRSI(currentPrice) {
+        if (!candleData.length || candleData.length < 14) return 50;
+        
+        const period = 14;
+        let closes = candleData.slice(-period).map(c => c.c);
+        closes.push(currentPrice);
+        
+        let gains = 0, losses = 0;
+        for (let i = 1; i < closes.length; i++) {
+            let diff = closes[i] - closes[i-1];
+            if (diff >= 0) gains += diff;
+            else losses -= diff;
+        }
+        
+        let avgGain = gains / period;
+        let avgLoss = losses / period;
+        let rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+        let rsi = 100 - (100 / (1 + rs));
+        
+        return Math.min(100, Math.max(0, rsi));
+    }
+    
+    // DETECT LIQUIDITY SWEEP (REAL-TIME)
+    function detectLiquiditySweep(price, high, low) {
+        if (!engine.swingHigh || !engine.swingLow) return false;
+        
+        const buffer = currentPair === "XAUUSDT" ? 0.5 : 50;
+        const now = Date.now();
+        
+        // SWEEP HIGH (Bull Trap)
+        if (price > engine.swingHigh + buffer && !engine.sweepDetected && now - engine.lastSweepTime > 8000) {
+            engine.sweepDetected = true;
+            engine.liquiditySide = "SELL";
+            engine.lastSweepTime = now;
+            engine.bosConfirmed = false;
+            updateLiquidityUI("SWEEP", "SELL");
+            showAlert("🔥 LIQUIDITY SWEEP | HIGH TAKEN", "sweep");
+            return true;
+        }
+        // SWEEP LOW (Bear Trap)
+        else if (price < engine.swingLow - buffer && !engine.sweepDetected && now - engine.lastSweepTime > 8000) {
+            engine.sweepDetected = true;
+            engine.liquiditySide = "BUY";
+            engine.lastSweepTime = now;
+            engine.bosConfirmed = false;
+            updateLiquidityUI("SWEEP", "BUY");
+            showAlert("🔥 LIQUIDITY SWEEP | LOW TAKEN", "sweep");
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // CONFIRM BREAK OF STRUCTURE
+    function confirmBOS(currentPrice) {
+        if (!engine.sweepDetected || engine.bosConfirmed) return false;
+        
+        const now = Date.now();
+        let bosConfirmed = false;
+        let bosSide = null;
+        
+        if (engine.liquiditySide === "BUY" && currentPrice > engine.swingHigh) {
+            bosConfirmed = true;
+            bosSide = "BULLISH";
+            engine.bosPrice = currentPrice;
+        }
+        else if (engine.liquiditySide === "SELL" && currentPrice < engine.swingLow) {
+            bosConfirmed = true;
+            bosSide = "BEARISH";
+            engine.bosPrice = currentPrice;
+        }
+        
+        if (bosConfirmed && now - engine.lastBosTime > 8000) {
+            engine.bosConfirmed = true;
+            engine.bias = bosSide === "BULLISH" ? "BULLISH_BOS" : "BEARISH_BOS";
+            engine.lastBosTime = now;
+            updateLiquidityUI("BOS", bosSide);
+            showAlert(`✅ BOS CONFIRMED | ${bosSide}`, "bos");
+            highlightFVGEntry();
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // RESET SWEEP STATUS SAAT STRUKTUR BARU
+    function resetSweepIfStructureChanged() {
+        if (engine.swingHigh !== engine.lastSwingHigh || engine.swingLow !== engine.lastSwingLow) {
+            if (engine.sweepDetected && !engine.bosConfirmed) {
+                engine.sweepDetected = false;
+                engine.liquiditySide = null;
+                updateLiquidityUI("RESET", null);
+            }
+            engine.lastSwingHigh = engine.swingHigh;
+            engine.lastSwingLow = engine.swingLow;
+        }
+    }
+    
+    // UPDATE UI LIQUIDITY
+    function updateLiquidityUI(status, side) {
+        const elem = document.getElementById('liquidity-status');
+        if (status === "SWEEP") {
+            elem.innerHTML = side === "BUY" ? "🔥 SWEEP DETECTED | BEAR TRAP" : "🔥 SWEEP DETECTED | BULL TRAP";
+            elem.className = "liquidity-status sweep";
+        } else if (status === "BOS") {
+            elem.innerHTML = side === "BULLISH" ? "✅ BOS CONFIRMED | BULLISH" : "✅ BOS CONFIRMED | BEARISH";
+            elem.className = "liquidity-status bos";
+        } else {
+            elem.innerHTML = "⚡ AWAITING SWEEP";
+            elem.className = "liquidity-status";
+        }
+    }
+    
+    // UPDATE ADX UI
+    function updateADXUI(adxValue) {
+        const adxElem = document.getElementById('adx-status');
+        const adxValueElem = document.getElementById('adx-value');
+        const adxBar = document.getElementById('adx-bar');
+        const adxRec = document.getElementById('adx-recommendation');
+        
+        if (!adxValueElem) return;
+        
+        adxValueElem.innerText = adxValue.toFixed(1);
+        adxBar.style.width = Math.min(100, (adxValue / 60) * 100) + "%";
+        
+        let statusClass = "";
+        let recText = "";
+        let barColor = "";
+        
+        if (adxValue < 20) {
+            statusClass = "ranging";
+            barColor = "var(--silver-dark)";
+            recText = "⚠️ RANGING MARKET (ADX < 20) - Hindari entry baru, tunggu trend.";
+        } else if (adxValue < 25) {
+            statusClass = "weak";
+            barColor = "var(--gold)";
+            recText = "⚡ WEAK TREND (ADX 20-25) - Konfirmasi dengan struktur SMC.";
+        } else if (adxValue < 40) {
+            statusClass = "strong";
+            barColor = "var(--accent)";
+            recText = "✅ STRONG TREND (ADX > 25) - Ideal untuk entry setelah BOS.";
+        } else {
+            statusClass = "strong";
+            barColor = "var(--accent)";
+            recText = "🔥 VERY STRONG TREND (ADX > 40) - Momentum kuat, ikuti arah.";
+        }
+        
+        adxElem.className = `adx-status ${statusClass}`;
+        adxBar.style.background = barColor;
+        adxRec.className = `adx-recommendation ${statusClass}`;
+        adxRec.innerHTML = `📊 ADX: ${adxValue.toFixed(1)} - ${recText}`;
+        
+        engine.adx = adxValue;
+        engine.isTrending = adxValue >= 25;
+    }
+    
+    // UPDATE EMA34 UI
+    function updateEMA34UI(currentPrice) {
+        const emaValue = calculateEMA34();
+        const emaElem = document.getElementById('ema34-value');
+        const emaStatus = document.getElementById('ema34-status');
+        
+        if (!emaElem) return;
+        
+        if (emaValue !== null && !isNaN(emaValue)) {
+            engine.ema34 = emaValue;
+            const prec = getPrecision();
+            emaElem.innerText = emaValue.toFixed(prec);
+            
+            if (currentPrice > emaValue) {
+                emaStatus.className = "ema34-status bullish";
+                emaElem.style.color = "var(--accent)";
+            } else {
+                emaStatus.className = "ema34-status bearish";
+                emaElem.style.color = "var(--danger)";
+            }
+        } else {
+            emaElem.innerText = "--";
+            emaStatus.className = "ema34-status";
+        }
+    }
+    
+    // HIGHLIGHT FVG ENTRY ZONE
+    function highlightFVGEntry() {
+        ['r618', 'r705', 'r79'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('fvg-highlight');
+                setTimeout(() => el.classList.remove('fvg-highlight'), 1500);
+            }
+        });
+    }
+    
+    // CALCULATE SMC LEVELS (DENGAN SL 65% DARI JARAK TP)
+    function calculateSMCLevels() {
+        if (!candleData.length || candleData.length < 30) return;
+        
+        // Dynamic lookback berdasarkan timeframe
+        const lookback = currentTF === "5m" ? 40 : (currentTF === "15m" ? 50 : 80);
+        const slice = candleData.slice(-Math.min(candleData.length, lookback));
+        
+        const swingHigh = Math.max(...slice.map(c => c.h));
+        const swingLow = Math.min(...slice.map(c => c.l));
+        const lastCandle = candleData[candleData.length - 1];
+        const currentPrice = lastCandle.c;
+        const range = swingHigh - swingLow;
+        
+        if (range <= 0) return;
+        
+        // Update swing levels
+        engine.swingHigh = swingHigh;
+        engine.swingLow = swingLow;
+        
+        // Reset status jika struktur berubah
+        resetSweepIfStructureChanged();
+        
+        // Update bias jika belum BOS
+        if (!engine.bosConfirmed) {
+            engine.bias = currentPrice > (swingHigh + swingLow) / 2 ? "BULLISH" : "BEARISH";
+        }
+        
+        const isBullish = engine.bosConfirmed ? engine.bias === "BULLISH_BOS" : engine.bias === "BULLISH";
+        
+        // Hitung Fibonacci levels
+        if (isBullish) {
+            engine.f618 = swingLow + (range * 0.618);
+            engine.ote = swingLow + (range * 0.705);
+            engine.deep = swingLow + (range * 0.79);
+            engine.tp = swingHigh + (range * 0.23);
+            
+            // SL = 65% dari jarak ke TP (dari OTE)
+            const distToTP = Math.abs(engine.tp - engine.ote);
+            engine.sl = engine.ote - (distToTP * 0.65);
+        } else {
+            engine.f618 = swingHigh - (range * 0.618);
+            engine.ote = swingHigh - (range * 0.705);
+            engine.deep = swingHigh - (range * 0.79);
+            engine.tp = swingLow - (range * 0.23);
+            
+            // SL = 65% dari jarak ke TP (dari OTE)
+            const distToTP = Math.abs(engine.ote - engine.tp);
+            engine.sl = engine.ote + (distToTP * 0.65);
+        }
+        
+        // Range dalam pips (untuk XAUUSD: 1 point = 0.01 = 1 pip)
+        engine.range = currentPair === "XAUUSDT" ? Math.abs(currentPrice - engine.tp) * 10 : Math.abs(currentPrice - engine.tp);
+    }
+    
+    // UPDATE UI UTAMA
+    function updateUI(currentPrice) {
+        const prec = getPrecision();
         const priceElem = document.getElementById('live-price');
         
-        // Format Visual Price
-        const pFixed = price.toFixed(prec);
+        // Format harga
+        const pFixed = currentPrice.toFixed(prec);
         const parts = pFixed.split('.');
         priceElem.innerHTML = `${parts[0]}<span class="price-decimal">.${parts[1] || "00"}</span>`;
-        priceElem.style.color = price >= lastPrice ? "var(--accent)" : "var(--danger)";
         
-        // Update Data Grid
+        // Animasi perubahan harga
+        if (currentPrice > lastPrice && lastPrice !== 0) {
+            priceElem.style.color = "var(--accent)";
+        } else if (currentPrice < lastPrice && lastPrice !== 0) {
+            priceElem.style.color = "var(--danger)";
+        }
+        priceElem.classList.add('price-flash');
+        setTimeout(() => priceElem.classList.remove('price-flash'), 100);
+        
+        // Update data grid
         document.getElementById('r618').innerText = engine.f618.toFixed(prec);
         document.getElementById('r705').innerText = engine.ote.toFixed(prec);
         document.getElementById('r79').innerText = engine.deep.toFixed(prec);
         document.getElementById('rSL').innerText = engine.sl.toFixed(prec);
         document.getElementById('rTP').innerText = engine.tp.toFixed(prec);
         document.getElementById('rRange').innerText = engine.range.toFixed(1);
-
-        // RSI & ADX Sync
-        const rsi = computeRSI(price);
+        
+        // RSI
+        const rsi = computeRSI(currentPrice);
         document.getElementById('rsi-val').innerText = rsi.toFixed(2);
         document.getElementById('rsi-bar').style.width = rsi + "%";
+        document.getElementById('rsi-bar').style.background = rsi > 70 ? "var(--danger)" : (rsi < 30 ? "var(--accent)" : "var(--silver-medium)");
         
-        const adxVal = calculateADX();
-        updateADXUI(adxVal);
-
-        // EMA34 Sync
-        engine.ema34 = calculateEMA(34);
-        const emaElem = document.getElementById('ema34-value');
-        emaElem.innerText = engine.ema34.toFixed(prec);
-        document.getElementById('ema34-status').className = price > engine.ema34 ? "ema34-status bullish" : "ema34-status bearish";
-
-        // Status Header
-        const sys = document.getElementById('sys-status');
-        sys.innerText = engine.bosConfirmed ? "BOS✓" : (engine.sweepDetected ? "SWEEP◆" : "「•」");
-        sys.style.color = engine.bias.includes("BULL") ? "var(--accent)" : "var(--danger)";
-        document.getElementById('pattern-val').innerText = engine.bias.replace('_', ' ');
-
-        lastPrice = price;
-    }
-
-    // STANDAR RSI 14
-    function computeRSI(currentPrice) {
-        const period = 14;
-        const closes = candleData.slice(-period).map(c => c.c);
-        closes.push(currentPrice);
-        let gains = 0, losses = 0;
-        for (let i = 1; i < closes.length; i++) {
-            let diff = closes[i] - closes[i-1];
-            if (diff >= 0) gains += diff; else losses -= diff;
+        // ADX & EMA34
+        const adx = calculateADX();
+        updateADXUI(adx);
+        updateEMA34UI(currentPrice);
+        
+        // Status header
+        const sysDiv = document.getElementById('sys-status');
+        if (engine.bosConfirmed) {
+            sysDiv.innerHTML = `BOS✓ ${engine.bias.includes("BULL") ? "BULL" : "BEAR"}`;
+            sysDiv.style.color = engine.bias.includes("BULL") ? "var(--accent)" : "var(--danger)";
+        } else if (engine.sweepDetected) {
+            sysDiv.innerHTML = "SWEEP ◆";
+            sysDiv.style.color = "var(--orange)";
+        } else {
+            sysDiv.innerHTML = "「•」";
+            sysDiv.style.color = "var(--gold)";
         }
-        let rs = (gains / period) / (losses / period || 1);
-        return 100 - (100 / (1 + rs));
-    }
-
-    function updateADXUI(val) {
-        const el = document.getElementById('adx-value');
-        const bar = document.getElementById('adx-bar');
-        const rec = document.getElementById('adx-recommendation');
-        el.innerText = val.toFixed(1);
-        bar.style.width = (val / 60 * 100) + "%";
         
-        let state = val < 20 ? "ranging" : (val < 25 ? "weak" : "strong");
-        document.getElementById('adx-status').className = "adx-status " + state;
-        rec.className = "adx-recommendation " + state;
-        rec.innerHTML = `📊 ADX: ${val.toFixed(1)} - ${val > 25 ? "Trend Kuat. Ikuti BOS." : "Market Sideways. Hati-hati."}`;
+        document.getElementById('pattern-val').innerHTML = engine.bias.replace('_', ' ');
+        
+        lastPrice = currentPrice;
     }
-
-    // CORE FUNCTIONS (TETAP SAMA)
-    function updateLiquidityUI(status, side) {
-        const el = document.getElementById('liquidity-status');
-        el.className = "liquidity-status " + status.toLowerCase();
-        el.innerText = status === "SWEEP" ? `🔥 ${side} SWEEP DETECTED` : `✅ ${side} BOS CONFIRMED`;
-    }
-
-    function highlightFVGEntry() {
-        ['r618', 'r705', 'r79'].forEach(id => {
-            const el = document.getElementById(id);
-            el.classList.add('fvg-highlight');
-            setTimeout(() => el.classList.remove('fvg-highlight'), 2000);
-        });
-    }
-
+    
+    // ==================== DATA FETCHING ====================
     async function fetchKlines() {
         try {
-            const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${currentPair}&interval=${currentTF}&limit=100`;
+            const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${currentPair}&interval=${currentTF}&limit=120`;
             const resp = await fetch(url);
             const data = await resp.json();
-            candleData = data.map(d => ({ h: parseFloat(d[2]), l: parseFloat(d[3]), c: parseFloat(d[4]) }));
-            calculateSMC();
+            
+            candleData = data.map(d => ({
+                o: parseFloat(d[1]),
+                h: parseFloat(d[2]),
+                l: parseFloat(d[3]),
+                c: parseFloat(d[4]),
+                t: d[0],
+                v: parseFloat(d[5])
+            }));
+            
+            calculateSMCLevels();
+            if (candleData.length) {
+                updateUI(candleData[candleData.length - 1].c);
+            }
             return true;
-        } catch (e) { return false; }
+        } catch (err) {
+            console.error("Fetch error:", err);
+            return false;
+        }
     }
-
+    
     function initWebSocket() {
         if (wsPrice) wsPrice.close();
-        wsPrice = new WebSocket(`wss://fstream.binance.com/ws/${currentPair.toLowerCase()}@aggTrade`);
-        wsPrice.onmessage = (e) => {
-            const msg = JSON.parse(e.data);
-            if (msg.p) {
-                const p = parseFloat(msg.p);
-                calculateSMC();
-                updateUI(p);
+        
+        const wsUrl = `wss://fstream.binance.com/ws/${currentPair.toLowerCase()}@aggTrade`;
+        wsPrice = new WebSocket(wsUrl);
+        
+        wsPrice.onopen = () => {
+            console.log("WebSocket connected");
+        };
+        
+        wsPrice.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg.p) {
+                    const tradePrice = parseFloat(msg.p);
+                    calculateSMCLevels();
+                    detectLiquiditySweep(tradePrice, engine.swingHigh, engine.swingLow);
+                    confirmBOS(tradePrice);
+                    updateUI(tradePrice);
+                }
+            } catch (err) {
+                console.warn("WebSocket parse error:", err);
             }
         };
+        
+        wsPrice.onerror = (err) => {
+            console.warn("WebSocket error:", err);
+        };
     }
-
-    function showAlert(msg, type) {
+    
+    function showAlert(message, type) {
+        const toast = document.getElementById('toastCopy');
+        toast.innerText = message;
+        toast.style.borderColor = type === "sweep" ? "var(--orange)" : "var(--accent)";
+        toast.style.color = type === "sweep" ? "var(--orange)" : "var(--accent)";
+        toast.style.opacity = "1";
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            toast.style.borderColor = "var(--accent)";
+            toast.style.color = "var(--accent)";
+        }, 2500);
+    }
+    
+    window.smartCopy = function(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        let text = el.innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            showToastMsg(`✓ Copied: ${text}`);
+            el.classList.add('copied');
+            setTimeout(() => el.classList.remove('copied'), 300);
+        });
+    };
+    
+    function showToastMsg(msg) {
         const toast = document.getElementById('toastCopy');
         toast.innerText = msg;
-        toast.style.opacity = '1';
-        setTimeout(() => toast.style.opacity = '0', 2500);
+        toast.style.borderColor = "var(--accent)";
+        toast.style.color = "var(--accent)";
+        toast.style.opacity = "1";
+        setTimeout(() => toast.style.opacity = "0", 1500);
     }
-
-    window.smartCopy = function(id) {
-        const val = document.getElementById(id).innerText;
-        navigator.clipboard.writeText(val);
-        showAlert("✓ Copied: " + val);
-    };
-
+    
     function updateClockAndSession() {
         const now = new Date();
+        const hours = now.getHours();
         document.getElementById('clock-module').innerText = now.toLocaleTimeString('id-ID');
-        document.getElementById('date-display').innerText = now.toLocaleDateString('id-ID', {day:'2-digit', month:'short'});
-        const h = now.getHours();
-        document.getElementById('session-tag').innerText = h >= 7 && h < 14 ? "ASIA" : (h >= 14 && h < 20 ? "LONDON" : "NY_VOL");
+        document.getElementById('date-display').innerText = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+        
+        let session = "NY_VOL";
+        if (hours >= 7 && hours < 14) session = "ASIA";
+        else if (hours >= 14 && hours < 20) session = "LONDON";
+        document.getElementById('session-tag').innerText = session;
     }
-
+    
     async function fullReload() {
         document.getElementById('main-terminal').classList.add('syncing');
-        engine.sweepDetected = false; engine.bosConfirmed = false;
-        await fetchKlines(); initWebSocket();
-        document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
-        document.getElementById(`btn-${currentPair}`).classList.add('active');
-        document.getElementById(`tf-${currentTF}`).classList.add('active');
-        setTimeout(() => document.getElementById('main-terminal').classList.remove('syncing'), 500);
+        
+        // Reset state
+        engine.sweepDetected = false;
+        engine.bosConfirmed = false;
+        engine.liquiditySide = null;
+        updateLiquidityUI("RESET", null);
+        
+        await fetchKlines();
+        initWebSocket();
+        
+        // Update active buttons
+        document.querySelectorAll('.btn-tab').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`btn-${currentPair}`)?.classList.add('active');
+        document.getElementById(`tf-${currentTF}`)?.classList.add('active');
+        
+        setTimeout(() => {
+            document.getElementById('main-terminal').classList.remove('syncing');
+        }, 500);
     }
-
-    document.querySelectorAll('[data-pair]').forEach(b => b.onclick = () => { currentPair = b.dataset.pair; fullReload(); });
-    document.querySelectorAll('[data-tf]').forEach(b => b.onclick = () => { currentTF = b.dataset.tf; fullReload(); });
-
+    
+    // ==================== EVENT LISTENERS ====================
+    document.querySelectorAll('[data-pair]').forEach(btn => {
+        btn.onclick = () => {
+            currentPair = btn.dataset.pair;
+            localStorage.setItem('lastPair', currentPair);
+            fullReload();
+        };
+    });
+    
+    document.querySelectorAll('[data-tf]').forEach(btn => {
+        btn.onclick = () => {
+            currentTF = btn.dataset.tf;
+            localStorage.setItem('lastTF', currentTF);
+            fullReload();
+        };
+    });
+    
+    // Periodic update
     setInterval(updateClockAndSession, 1000);
+    setInterval(() => {
+        if (lastPrice > 0) {
+            calculateSMCLevels();
+            updateUI(lastPrice);
+        }
+    }, 4000);
+    
+    // Start
     fullReload();
 </script>
 </body>
