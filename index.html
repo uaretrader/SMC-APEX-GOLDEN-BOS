@@ -94,7 +94,7 @@
         </nav>
 
         <main class="hero-display">
-            <!-- URUTAN BARU: ADX → EMA34 → FVG → BIAS → LIQUIDITY STATUS -->
+            <!-- URUTAN: ADX → EMA34 → FVG → BIAS → LIQUIDITY STATUS -->
             <div class="hero-meta-row">
                 <div class="adx-status ranging" id="adx-status">
                     <span>ADX</span>
@@ -175,35 +175,94 @@
         return currentPair === "XAUUSDT" ? 2 : 1;
     }
     
-    // ADX
+    // ==================== ADX REAL-TIME (FIXED - WILDER'S SMOOTHING) ====================
     function calculateADX() {
-        if (!candleData.length || candleData.length < 28) return 25;
+        // Minimal data candle untuk ADX 14 period
+        if (!candleData.length || candleData.length < 28) {
+            return 25;
+        }
+        
         try {
             const period = 14;
             const data = candleData.slice(-(period * 2));
             if (data.length < period + 1) return 25;
-            let tr = [], plusDM = [], minusDM = [];
+            
+            let tr = [];
+            let plusDM = [];
+            let minusDM = [];
+            
             for (let i = 1; i < data.length; i++) {
-                const high = data[i].h, low = data[i].l, prevHigh = data[i-1].h, prevLow = data[i-1].l, prevClose = data[i-1].c;
-                tr.push(Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose)));
-                const upMove = high - prevHigh, downMove = prevLow - low;
-                if (upMove > downMove && upMove > 0) { plusDM.push(upMove); minusDM.push(0); }
-                else if (downMove > upMove && downMove > 0) { plusDM.push(0); minusDM.push(downMove); }
-                else { plusDM.push(0); minusDM.push(0); }
+                const high = data[i].h;
+                const low = data[i].l;
+                const prevHigh = data[i-1].h;
+                const prevLow = data[i-1].l;
+                const prevClose = data[i-1].c;
+                
+                // True Range (TR)
+                const tr1 = high - low;
+                const tr2 = Math.abs(high - prevClose);
+                const tr3 = Math.abs(low - prevClose);
+                tr.push(Math.max(tr1, tr2, tr3));
+                
+                // Directional Movement (+DM / -DM)
+                const upMove = high - prevHigh;
+                const downMove = prevLow - low;
+                
+                if (upMove > downMove && upMove > 0) {
+                    plusDM.push(upMove);
+                    minusDM.push(0);
+                } else if (downMove > upMove && downMove > 0) {
+                    plusDM.push(0);
+                    minusDM.push(downMove);
+                } else {
+                    plusDM.push(0);
+                    minusDM.push(0);
+                }
             }
+            
             if (tr.length < period) return 25;
-            let atr = 0, avgPlusDM = 0, avgMinusDM = 0;
-            for (let i = 0; i < period; i++) { atr += tr[i]; avgPlusDM += plusDM[i]; avgMinusDM += minusDM[i]; }
-            atr /= period; avgPlusDM /= period; avgMinusDM /= period;
-            for (let i = period; i < tr.length; i++) {
-                atr = (atr * (period - 1) + tr[i]) / period;
-                avgPlusDM = (avgPlusDM * (period - 1) + plusDM[i]) / period;
-                avgMinusDM = (avgMinusDM * (period - 1) + minusDM[i]) / period;
+            
+            // Wilder's Smoothing (EMA with alpha = 1/period)
+            let smoothedTR = 0;
+            let smoothedPlusDM = 0;
+            let smoothedMinusDM = 0;
+            
+            // Initial average for first period
+            for (let i = 0; i < period; i++) {
+                smoothedTR += tr[i];
+                smoothedPlusDM += plusDM[i];
+                smoothedMinusDM += minusDM[i];
             }
-            const plusDI = (avgPlusDM / atr) * 100, minusDI = (avgMinusDM / atr) * 100;
-            const dx = (Math.abs(plusDI - minusDI) / (plusDI + minusDI)) * 100;
-            return Math.min(100, Math.max(0, isNaN(dx) ? 25 : dx));
-        } catch (error) { return 25; }
+            
+            smoothedTR /= period;
+            smoothedPlusDM /= period;
+            smoothedMinusDM /= period;
+            
+            // Wilder's smoothing for remaining periods
+            for (let i = period; i < tr.length; i++) {
+                smoothedTR = (smoothedTR * (period - 1) + tr[i]) / period;
+                smoothedPlusDM = (smoothedPlusDM * (period - 1) + plusDM[i]) / period;
+                smoothedMinusDM = (smoothedMinusDM * (period - 1) + minusDM[i]) / period;
+            }
+            
+            // Calculate +DI and -DI
+            const plusDI = (smoothedPlusDM / smoothedTR) * 100;
+            const minusDI = (smoothedMinusDM / smoothedTR) * 100;
+            
+            // Calculate DX (Directional Index)
+            const diSum = plusDI + minusDI;
+            const diDiff = Math.abs(plusDI - minusDI);
+            const dx = diSum === 0 ? 0 : (diDiff / diSum) * 100;
+            
+            // ADX is the smoothed DX (we use current DX for real-time responsiveness)
+            const adx = Math.min(100, Math.max(0, isNaN(dx) ? 25 : dx));
+            
+            return adx;
+            
+        } catch (error) {
+            console.warn("ADX Error:", error);
+            return 25;
+        }
     }
     
     // EMA34
@@ -248,24 +307,18 @@
         if (tpHit && (Date.now() - engine.lastTPHitTime) > 10000) {
             engine.lastTPHitTime = Date.now();
             
-            // Reset status sweep dan BOS
             engine.sweepDetected = false;
             engine.bosConfirmed = false;
             engine.liquiditySide = null;
             updateLiquidityUI("RESET", null);
-            
-            // Paksa hitung ulang struktur berdasarkan data terbaru
             forceRecalculateStructure();
-            
             showAlert("✅ TP TARGET HIT! Structure recalculated", "tp");
             showToastMsg("🎯 TP Hit! New levels generated");
-            
             return true;
         }
         return false;
     }
     
-    // Paksa hitung ulang struktur setelah TP tercapai
     function forceRecalculateStructure() {
         if (!candleData.length || candleData.length < 30) return;
         
@@ -281,14 +334,9 @@
         engine.swingLow = newSwingLow;
         engine.lastSwingHigh = newSwingHigh;
         engine.lastSwingLow = newSwingLow;
-        
-        // Update bias berdasarkan harga terbaru
         engine.bias = currentPrice > (newSwingHigh + newSwingLow) / 2 ? "BULLISH" : "BEARISH";
         
-        // Recalculate levels
         calculateSMCLevels();
-        
-        // Update UI dengan harga terbaru
         if (lastPrice > 0) updateUI(lastPrice);
     }
     
@@ -514,16 +562,20 @@
         document.getElementById('rTP').innerText = engine.tp.toFixed(prec);
         document.getElementById('rRange').innerText = engine.range.toFixed(1);
         
+        // RSI REAL-TIME
         const rsi = computeRSI(currentPrice);
         document.getElementById('rsi-val').innerText = rsi.toFixed(2);
         document.getElementById('rsi-bar').style.width = rsi + "%";
         document.getElementById('rsi-bar').style.background = rsi > 70 ? "var(--danger)" : (rsi < 30 ? "var(--accent)" : "var(--silver-medium)");
         
+        // ADX REAL-TIME (dihitung ulang setiap tick seperti RSI)
         const adx = calculateADX();
         updateADXUI(adx);
+        
+        // EMA34 REAL-TIME
         updateEMA34UI(currentPrice);
         
-        // ========== ADX FILTER: HANYA TAMPILKAN BIAS JIKA ADX >= 20 ==========
+        // ADX FILTER: HANYA TAMPILKAN BIAS JIKA ADX >= 20
         const biasDisplay = document.getElementById('pattern-val');
         if (adx < 20) {
             biasDisplay.innerHTML = `⚠️ RANGING (ADX ${adx.toFixed(1)})`;
@@ -546,7 +598,7 @@
             sysDiv.style.color = "var(--gold)";
         }
         
-        // ========== AUTO RESET TP HIT ==========
+        // AUTO RESET TP HIT
         checkTPHit(currentPrice);
         
         lastPrice = currentPrice;
