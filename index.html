@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>SMC APEX v13.0.0 | UR • TRADER TERMINAL</title>
     <style>
+        /* CSS SAMA PERSIS SEPERTI SEBELUMNYA */
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;800&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         :root { --bg: #010101; --accent: #00ffaa; --gold: #ffcc00; --danger: #ff4757; --blue: #00d4ff; --purple: #aa66ff; --orange: #ff884d; --border: rgba(0, 255, 170, 0.2); --silver-bright: #e0e0e0; --silver-medium: #c0c0c0; --silver-dark: #a9a9a9; --gold-dim: rgba(255, 204, 0, 0.12); --card-bg: #050505; }
@@ -94,7 +95,6 @@
         </nav>
 
         <main class="hero-display">
-            <!-- URUTAN: ADX → EMA34 → FVG → BIAS → LIQUIDITY STATUS -->
             <div class="hero-meta-row">
                 <div class="adx-status ranging" id="adx-status">
                     <span>ADX</span>
@@ -129,7 +129,7 @@
                 </div>
                 <div class="rsi-panel">
                     <div class="rsi-meta">
-                        <div class="rsi-tag">RSI (14) • REAL-TIME SYNC</div>
+                        <div class="rsi-tag">RSI (14) • SAMA DENGAN MT5</div>
                         <div id="rsi-val">---</div>
                     </div>
                     <div class="rsi-track"><div id="rsi-bar"></div></div>
@@ -175,94 +175,171 @@
         return currentPair === "XAUUSDT" ? 2 : 1;
     }
     
-    // ==================== ADX REAL-TIME (FIXED - WILDER'S SMOOTHING) ====================
-    function calculateADX() {
-        // Minimal data candle untuk ADX 14 period
-        if (!candleData.length || candleData.length < 28) {
-            return 25;
+    // ==================== RSI SAMA DENGAN MT5 ====================
+    function computeRSI(currentPrice) {
+        // Minimal data: 14 periode + 1 untuk perhitungan
+        if (!candleData.length || candleData.length < 15) return 50;
+        
+        const period = 14;
+        
+        // Ambil data close dari candle LENGKAP (bukan tick)
+        // Ini yang membuat RSI sama dengan MT5
+        let closes = [];
+        
+        // Gunakan 20 candle terakhir untuk perhitungan yang akurat
+        const candleCount = Math.min(candleData.length, period + 6);
+        for (let i = candleData.length - candleCount; i < candleData.length; i++) {
+            closes.push(candleData[i].c);
         }
+        
+        // Tambahkan harga tick terbaru sebagai data terakhir
+        // TAPI jangan mengganti close candle yang sudah final
+        if (closes.length > 0 && currentPrice !== closes[closes.length - 1]) {
+            closes.push(currentPrice);
+        }
+        
+        if (closes.length < period + 1) return 50;
+        
+        // Hitung gain dan loss awal
+        let gains = 0;
+        let losses = 0;
+        
+        // Hitung perubahan harga untuk periode awal
+        for (let i = closes.length - period; i < closes.length; i++) {
+            if (i > 0) {
+                const diff = closes[i] - closes[i - 1];
+                if (diff >= 0) {
+                    gains += diff;
+                } else {
+                    losses += Math.abs(diff);
+                }
+            }
+        }
+        
+        // Rata-rata gain dan loss
+        let avgGain = gains / period;
+        let avgLoss = losses / period;
+        
+        // Wilder's Smoothing untuk RSI (sama dengan MT5)
+        // Mulai dari index setelah periode awal
+        for (let i = closes.length - period + 1; i < closes.length; i++) {
+            if (i > 0) {
+                const diff = closes[i] - closes[i - 1];
+                if (diff >= 0) {
+                    avgGain = ((avgGain * (period - 1)) + diff) / period;
+                    avgLoss = (avgLoss * (period - 1)) / period;
+                } else {
+                    avgGain = (avgGain * (period - 1)) / period;
+                    avgLoss = ((avgLoss * (period - 1)) + Math.abs(diff)) / period;
+                }
+            }
+        }
+        
+        // RS dan RSI
+        const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+        let rsi = 100 - (100 / (1 + rs));
+        
+        // Batasi nilai RSI antara 0 dan 100
+        rsi = Math.min(100, Math.max(0, rsi));
+        
+        return rsi;
+    }
+    
+    // ==================== ADX REAL-TIME ====================
+    function calculateADXWithTick(currentPrice) {
+        if (!candleData.length || candleData.length < 28) return 25;
         
         try {
             const period = 14;
             const data = candleData.slice(-(period * 2));
             if (data.length < period + 1) return 25;
             
-            let tr = [];
-            let plusDM = [];
-            let minusDM = [];
+            let tr = [], plusDM = [], minusDM = [];
             
             for (let i = 1; i < data.length; i++) {
-                const high = data[i].h;
-                const low = data[i].l;
-                const prevHigh = data[i-1].h;
-                const prevLow = data[i-1].l;
-                const prevClose = data[i-1].c;
-                
-                // True Range (TR)
-                const tr1 = high - low;
-                const tr2 = Math.abs(high - prevClose);
-                const tr3 = Math.abs(low - prevClose);
-                tr.push(Math.max(tr1, tr2, tr3));
-                
-                // Directional Movement (+DM / -DM)
-                const upMove = high - prevHigh;
-                const downMove = prevLow - low;
-                
-                if (upMove > downMove && upMove > 0) {
-                    plusDM.push(upMove);
-                    minusDM.push(0);
-                } else if (downMove > upMove && downMove > 0) {
-                    plusDM.push(0);
-                    minusDM.push(downMove);
-                } else {
-                    plusDM.push(0);
-                    minusDM.push(0);
-                }
+                const high = data[i].h, low = data[i].l, prevHigh = data[i-1].h, prevLow = data[i-1].l, prevClose = data[i-1].c;
+                tr.push(Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose)));
+                const upMove = high - prevHigh, downMove = prevLow - low;
+                if (upMove > downMove && upMove > 0) { plusDM.push(upMove); minusDM.push(0); }
+                else if (downMove > upMove && downMove > 0) { plusDM.push(0); minusDM.push(downMove); }
+                else { plusDM.push(0); minusDM.push(0); }
+            }
+            
+            const lastCandle = data[data.length - 1];
+            const currentHigh = Math.max(lastCandle.h, currentPrice);
+            const currentLow = Math.min(lastCandle.l, currentPrice);
+            const prevClose = lastCandle.c;
+            
+            const tickTR = Math.max(currentHigh - currentLow, Math.abs(currentHigh - prevClose), Math.abs(currentLow - prevClose));
+            tr.push(tickTR);
+            
+            const tickUpMove = currentHigh - lastCandle.h;
+            const tickDownMove = lastCandle.l - currentLow;
+            
+            if (tickUpMove > tickDownMove && tickUpMove > 0) {
+                plusDM.push(tickUpMove);
+                minusDM.push(0);
+            } else if (tickDownMove > tickUpMove && tickDownMove > 0) {
+                plusDM.push(0);
+                minusDM.push(tickDownMove);
+            } else {
+                plusDM.push(0);
+                minusDM.push(0);
             }
             
             if (tr.length < period) return 25;
             
-            // Wilder's Smoothing (EMA with alpha = 1/period)
-            let smoothedTR = 0;
-            let smoothedPlusDM = 0;
-            let smoothedMinusDM = 0;
-            
-            // Initial average for first period
-            for (let i = 0; i < period; i++) {
+            let smoothedTR = 0, smoothedPlusDM = 0, smoothedMinusDM = 0;
+            const startIdx = tr.length - period;
+            for (let i = startIdx; i < tr.length; i++) {
                 smoothedTR += tr[i];
                 smoothedPlusDM += plusDM[i];
                 smoothedMinusDM += minusDM[i];
             }
+            smoothedTR /= period; smoothedPlusDM /= period; smoothedMinusDM /= period;
             
-            smoothedTR /= period;
-            smoothedPlusDM /= period;
-            smoothedMinusDM /= period;
-            
-            // Wilder's smoothing for remaining periods
-            for (let i = period; i < tr.length; i++) {
-                smoothedTR = (smoothedTR * (period - 1) + tr[i]) / period;
-                smoothedPlusDM = (smoothedPlusDM * (period - 1) + plusDM[i]) / period;
-                smoothedMinusDM = (smoothedMinusDM * (period - 1) + minusDM[i]) / period;
-            }
-            
-            // Calculate +DI and -DI
             const plusDI = (smoothedPlusDM / smoothedTR) * 100;
             const minusDI = (smoothedMinusDM / smoothedTR) * 100;
-            
-            // Calculate DX (Directional Index)
             const diSum = plusDI + minusDI;
             const diDiff = Math.abs(plusDI - minusDI);
             const dx = diSum === 0 ? 0 : (diDiff / diSum) * 100;
             
-            // ADX is the smoothed DX (we use current DX for real-time responsiveness)
-            const adx = Math.min(100, Math.max(0, isNaN(dx) ? 25 : dx));
-            
-            return adx;
-            
-        } catch (error) {
-            console.warn("ADX Error:", error);
-            return 25;
-        }
+            return Math.min(100, Math.max(0, isNaN(dx) ? 25 : dx));
+        } catch (error) { return 25; }
+    }
+    
+    function calculateADX() {
+        if (lastPrice > 0) return calculateADXWithTick(lastPrice);
+        if (!candleData.length || candleData.length < 28) return 25;
+        try {
+            const period = 14;
+            const data = candleData.slice(-(period * 2));
+            if (data.length < period + 1) return 25;
+            let tr = [], plusDM = [], minusDM = [];
+            for (let i = 1; i < data.length; i++) {
+                const high = data[i].h, low = data[i].l, prevHigh = data[i-1].h, prevLow = data[i-1].l, prevClose = data[i-1].c;
+                tr.push(Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose)));
+                const upMove = high - prevHigh, downMove = prevLow - low;
+                if (upMove > downMove && upMove > 0) { plusDM.push(upMove); minusDM.push(0); }
+                else if (downMove > upMove && downMove > 0) { plusDM.push(0); minusDM.push(downMove); }
+                else { plusDM.push(0); minusDM.push(0); }
+            }
+            if (tr.length < period) return 25;
+            let smoothedTR = 0, smoothedPlusDM = 0, smoothedMinusDM = 0;
+            const startIdx = tr.length - period;
+            for (let i = startIdx; i < tr.length; i++) {
+                smoothedTR += tr[i];
+                smoothedPlusDM += plusDM[i];
+                smoothedMinusDM += minusDM[i];
+            }
+            smoothedTR /= period; smoothedPlusDM /= period; smoothedMinusDM /= period;
+            const plusDI = (smoothedPlusDM / smoothedTR) * 100;
+            const minusDI = (smoothedMinusDM / smoothedTR) * 100;
+            const diSum = plusDI + minusDI;
+            const diDiff = Math.abs(plusDI - minusDI);
+            const dx = diSum === 0 ? 0 : (diDiff / diSum) * 100;
+            return Math.min(100, Math.max(0, isNaN(dx) ? 25 : dx));
+        } catch (error) { return 25; }
     }
     
     // EMA34
@@ -274,46 +351,22 @@
         return ema;
     }
     
-    // RSI
-    function computeRSI(currentPrice) {
-        if (!candleData.length || candleData.length < 14) return 50;
-        const period = 14;
-        let closes = candleData.slice(-period).map(c => c.c);
-        closes.push(currentPrice);
-        let gains = 0, losses = 0;
-        for (let i = 1; i < closes.length; i++) {
-            let diff = closes[i] - closes[i-1];
-            if (diff >= 0) gains += diff;
-            else losses -= diff;
-        }
-        let avgGain = gains / period, avgLoss = losses / period;
-        let rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-        return Math.min(100, Math.max(0, 100 - (100 / (1 + rs))));
-    }
-    
     // ==================== AUTO RESET TP HIT ====================
     function checkTPHit(currentPrice) {
         if (engine.tp === 0) return false;
-        
         const isBullish = engine.bias.includes("BULL");
         let tpHit = false;
-        
-        if (isBullish && currentPrice >= engine.tp) {
-            tpHit = true;
-        } else if (!isBullish && currentPrice <= engine.tp) {
-            tpHit = true;
-        }
+        if (isBullish && currentPrice >= engine.tp) tpHit = true;
+        else if (!isBullish && currentPrice <= engine.tp) tpHit = true;
         
         if (tpHit && (Date.now() - engine.lastTPHitTime) > 10000) {
             engine.lastTPHitTime = Date.now();
-            
             engine.sweepDetected = false;
             engine.bosConfirmed = false;
             engine.liquiditySide = null;
             updateLiquidityUI("RESET", null);
             forceRecalculateStructure();
             showAlert("✅ TP TARGET HIT! Structure recalculated", "tp");
-            showToastMsg("🎯 TP Hit! New levels generated");
             return true;
         }
         return false;
@@ -321,21 +374,16 @@
     
     function forceRecalculateStructure() {
         if (!candleData.length || candleData.length < 30) return;
-        
         const lookback = currentTF === "5m" ? 40 : (currentTF === "15m" ? 50 : 80);
         const slice = candleData.slice(-Math.min(candleData.length, lookback));
-        
         const newSwingHigh = Math.max(...slice.map(c => c.h));
         const newSwingLow = Math.min(...slice.map(c => c.l));
-        const lastCandle = candleData[candleData.length - 1];
-        const currentPrice = lastCandle.c;
-        
         engine.swingHigh = newSwingHigh;
         engine.swingLow = newSwingLow;
         engine.lastSwingHigh = newSwingHigh;
         engine.lastSwingLow = newSwingLow;
-        engine.bias = currentPrice > (newSwingHigh + newSwingLow) / 2 ? "BULLISH" : "BEARISH";
-        
+        const lastCandle = candleData[candleData.length - 1];
+        engine.bias = lastCandle.c > (newSwingHigh + newSwingLow) / 2 ? "BULLISH" : "BEARISH";
         calculateSMCLevels();
         if (lastPrice > 0) updateUI(lastPrice);
     }
@@ -343,10 +391,8 @@
     // DETECT LIQUIDITY SWEEP
     function detectLiquiditySweep(price) {
         if (!engine.swingHigh || !engine.swingLow) return false;
-        
         const buffer = currentPair === "XAUUSDT" ? 0.5 : 50;
         const now = Date.now();
-        
         if (price > engine.swingHigh + buffer && !engine.sweepDetected && now - engine.lastSweepTime > 8000) {
             engine.sweepDetected = true;
             engine.liquiditySide = "SELL";
@@ -355,8 +401,7 @@
             updateLiquidityUI("SWEEP", "SELL");
             showAlert("🔥 LIQUIDITY SWEEP | HIGH TAKEN", "sweep");
             return true;
-        }
-        else if (price < engine.swingLow - buffer && !engine.sweepDetected && now - engine.lastSweepTime > 8000) {
+        } else if (price < engine.swingLow - buffer && !engine.sweepDetected && now - engine.lastSweepTime > 8000) {
             engine.sweepDetected = true;
             engine.liquiditySide = "BUY";
             engine.lastSweepTime = now;
@@ -368,12 +413,9 @@
         return false;
     }
     
-    // CONFIRM BOS
     function confirmBOS(currentPrice) {
         if (!engine.sweepDetected || engine.bosConfirmed) return false;
-        
         const now = Date.now();
-        
         if (engine.liquiditySide === "BUY" && currentPrice > engine.swingHigh) {
             engine.bosConfirmed = true;
             engine.bias = "BULLISH_BOS";
@@ -382,8 +424,7 @@
             showAlert("✅ BOS CONFIRMED | BULLISH", "bos");
             highlightFVGEntry();
             return true;
-        }
-        else if (engine.liquiditySide === "SELL" && currentPrice < engine.swingLow) {
+        } else if (engine.liquiditySide === "SELL" && currentPrice < engine.swingLow) {
             engine.bosConfirmed = true;
             engine.bias = "BEARISH_BOS";
             engine.lastBosTime = now;
@@ -395,7 +436,6 @@
         return false;
     }
     
-    // RESET SWEEP STATUS SAAT STRUKTUR BARU
     function resetSweepIfStructureChanged() {
         if (engine.swingHigh !== engine.lastSwingHigh || engine.swingLow !== engine.lastSwingLow) {
             if (engine.sweepDetected && !engine.bosConfirmed) {
@@ -408,7 +448,6 @@
         }
     }
     
-    // UPDATE UI LIQUIDITY
     function updateLiquidityUI(status, side) {
         const elem = document.getElementById('liquidity-status');
         if (status === "SWEEP") {
@@ -423,7 +462,6 @@
         }
     }
     
-    // UPDATE ADX UI
     function updateADXUI(adxValue) {
         const adxElem = document.getElementById('adx-status');
         const adxValueElem = document.getElementById('adx-value');
@@ -460,7 +498,6 @@
         engine.adx = adxValue;
     }
     
-    // UPDATE EMA34 UI
     function updateEMA34UI(currentPrice) {
         const emaValue = calculateEMA34();
         const emaElem = document.getElementById('ema34-value');
@@ -483,7 +520,6 @@
         }
     }
     
-    // HIGHLIGHT FVG
     function highlightFVGEntry() {
         ['r618', 'r705', 'r79'].forEach(id => {
             const el = document.getElementById(id);
@@ -494,7 +530,6 @@
         });
     }
     
-    // CALCULATE SMC LEVELS
     function calculateSMCLevels() {
         if (!candleData.length || candleData.length < 30) return;
         
@@ -562,20 +597,19 @@
         document.getElementById('rTP').innerText = engine.tp.toFixed(prec);
         document.getElementById('rRange').innerText = engine.range.toFixed(1);
         
-        // RSI REAL-TIME
+        // RSI - SEKARANG SAMA DENGAN MT5
         const rsi = computeRSI(currentPrice);
         document.getElementById('rsi-val').innerText = rsi.toFixed(2);
         document.getElementById('rsi-bar').style.width = rsi + "%";
         document.getElementById('rsi-bar').style.background = rsi > 70 ? "var(--danger)" : (rsi < 30 ? "var(--accent)" : "var(--silver-medium)");
         
-        // ADX REAL-TIME (dihitung ulang setiap tick seperti RSI)
-        const adx = calculateADX();
+        // ADX REAL-TIME
+        const adx = calculateADXWithTick(currentPrice);
         updateADXUI(adx);
         
-        // EMA34 REAL-TIME
         updateEMA34UI(currentPrice);
         
-        // ADX FILTER: HANYA TAMPILKAN BIAS JIKA ADX >= 20
+        // ADX FILTER
         const biasDisplay = document.getElementById('pattern-val');
         if (adx < 20) {
             biasDisplay.innerHTML = `⚠️ RANGING (ADX ${adx.toFixed(1)})`;
@@ -598,7 +632,6 @@
             sysDiv.style.color = "var(--gold)";
         }
         
-        // AUTO RESET TP HIT
         checkTPHit(currentPrice);
         
         lastPrice = currentPrice;
@@ -654,8 +687,6 @@
     function showToastMsg(msg) {
         const toast = document.getElementById('toastCopy');
         toast.innerText = msg;
-        toast.style.borderColor = "var(--accent)";
-        toast.style.color = "var(--accent)";
         toast.style.opacity = "1";
         setTimeout(() => toast.style.opacity = "0", 1500);
     }
@@ -682,19 +713,15 @@
     
     async function fullReload() {
         document.getElementById('main-terminal').classList.add('syncing');
-        
         engine.sweepDetected = false;
         engine.bosConfirmed = false;
         engine.liquiditySide = null;
         updateLiquidityUI("RESET", null);
-        
         await fetchKlines();
         initWebSocket();
-        
         document.querySelectorAll('.btn-tab').forEach(btn => btn.classList.remove('active'));
         document.getElementById(`btn-${currentPair}`)?.classList.add('active');
         document.getElementById(`tf-${currentTF}`)?.classList.add('active');
-        
         setTimeout(() => document.getElementById('main-terminal').classList.remove('syncing'), 500);
     }
     
