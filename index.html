@@ -532,6 +532,7 @@
         }
     }
     
+    // ==================== PERBAIKAN FVG LABEL ====================
     function updateEntryZoneUI() {
         const fvgElem = document.getElementById('fvg-status');
         if (engine.bosConfirmed && engine.fvgEntryActive) {
@@ -541,6 +542,7 @@
             fvgElem.innerHTML = "🎯 WAITING BOS";
             fvgElem.style.color = "var(--orange)";
         } else {
+            // PERBAIKAN: Menampilkan arah bias (Bull/Bear Imbalance)
             const isBullish = engine.bias === "BULLISH" || engine.bias === "BULLISH_BOS";
             fvgElem.innerHTML = isBullish ? "FVG: BULL IMBALANCE" : "FVG: BEAR IMBALANCE";
             fvgElem.style.color = isBullish ? "var(--accent)" : "var(--danger)";
@@ -749,7 +751,6 @@
     
     // ==================== WEBSOCKET DENGAN CLEAN CLOSE ====================
     function initWebSocket() {
-        // Bersihkan WebSocket lama
         if (wsPrice) {
             try {
                 wsPrice.onopen = null;
@@ -870,7 +871,6 @@
         
         document.getElementById('main-terminal').classList.add('syncing');
         
-        // Reset status
         engine.sweepDetected = false;
         engine.bosConfirmed = false;
         engine.liquiditySide = null;
@@ -884,7 +884,6 @@
         startPeriodicUpdates();
         startStuckChecker();
         
-        // Update active button styles
         document.querySelectorAll('.btn-tab').forEach(btn => btn.classList.remove('active'));
         document.getElementById(`btn-${currentPair}`)?.classList.add('active');
         document.getElementById(`tf-${currentTF}`)?.classList.add('active');
@@ -895,7 +894,6 @@
         }, 500);
     }
     
-    // Event listeners
     document.querySelectorAll('[data-pair]').forEach(btn => {
         btn.onclick = () => { 
             if (currentPair === btn.dataset.pair) return;
