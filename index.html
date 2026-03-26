@@ -40,7 +40,6 @@
         }
         .btn-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(0, 255, 170, 0.08); box-shadow: 0 0 8px rgba(0, 255, 170, 0.25); }
         
-        /* Hero Meta Row - Responsive Grid */
         .hero-display { padding: 8px 20px 20px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; width: 100%; }
         
         .hero-meta-row {
@@ -56,7 +55,6 @@
             align-items: center;
         }
         
-        /* Style dasar untuk semua meta item */
         .meta-item {
             background: rgba(0,0,0,0.6);
             padding: 4px 12px;
@@ -68,7 +66,6 @@
             transition: all 0.2s ease;
         }
         
-        /* ADX Status */
         .adx-status {
             background: rgba(0,0,0,0.6);
             padding: 4px 12px;
@@ -85,7 +82,6 @@
         .adx-status.weak { border-color: var(--gold); color: var(--gold); background: rgba(255, 204, 0, 0.1); }
         .adx-status.ranging { border-color: var(--silver-dark); color: var(--silver-dark); }
         
-        /* EMA34 Status */
         .ema34-status {
             background: rgba(0,0,0,0.6);
             padding: 4px 12px;
@@ -99,7 +95,6 @@
         .ema34-status.bullish { border-color: var(--accent); color: var(--accent); background: rgba(0, 255, 170, 0.1); }
         .ema34-status.bearish { border-color: var(--danger); color: var(--danger); background: rgba(255, 71, 87, 0.1); }
         
-        /* Swing High & Low - Style Khusus */
         .swing-high, .swing-low {
             background: rgba(0,0,0,0.6);
             padding: 4px 12px;
@@ -112,19 +107,9 @@
             font-weight: 800;
             font-size: 0.65rem;
         }
-        .swing-high span:first-child, .swing-low span:first-child {
-            color: var(--silver-dark);
-        }
-        .swing-high-value {
-            color: var(--silver-bright);
-            font-weight: 800;
-        }
-        .swing-low-value {
-            color: var(--silver-bright);
-            font-weight: 800;
-        }
+        .swing-high span:first-child, .swing-low span:first-child { color: var(--silver-dark); }
+        .swing-high-value, .swing-low-value { color: var(--silver-bright); font-weight: 800; }
         
-        /* FVG, BIAS, Liquidity Status */
         .meta-fvg, .meta-bias {
             background: rgba(0,0,0,0.6);
             padding: 4px 12px;
@@ -160,24 +145,26 @@
             background: rgba(0, 255, 170, 0.15);
             padding: 4px 16px;
         }
+        .liquidity-status.entry {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(0, 255, 170, 0.25);
+            padding: 4px 16px;
+            animation: pulse 0.8s infinite;
+        }
         
-        /* Responsive */
         @media (max-width: 700px) {
             .hero-meta-row { gap: 8px; }
             .adx-status, .ema34-status, .swing-high, .swing-low, .meta-fvg, .meta-bias, .liquidity-status {
                 font-size: 0.55rem;
                 padding: 3px 10px;
             }
-            .adx-value, .ema34-value, .swing-high-value, .swing-low-value {
-                min-width: auto;
-            }
+            .adx-value, .ema34-value, .swing-high-value, .swing-low-value { min-width: auto; }
         }
         
-        /* Harga Utama */
         #live-price { font-family: 'JetBrains Mono'; font-size: 2.5rem; font-weight: 800; letter-spacing: -2px; color: #fff; line-height: 1; cursor: pointer; transition: color 0.08s linear; word-break: break-word; text-align: left; width: 100%; margin-top: 4px; }
         .price-decimal { color: var(--accent); opacity: 0.7; font-size: 2.2rem; }
         
-        /* Data Grid */
         .data-grid { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; background: #0b0b0b; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
         .data-item { background: var(--bg); padding: 12px 4px; text-align: left; padding-left: 12px; border-right: 1px solid rgba(255,255,255,0.03); transition: background 0.1s; cursor: pointer; }
         .data-label { font-size: 0.45rem; color: var(--silver-medium); text-transform: uppercase; margin-bottom: 6px; display: block; font-weight: 700; letter-spacing: 0.8px; text-align: left; }
@@ -223,7 +210,7 @@
         <header class="header">
             <div class="brand-container">
                 <div class="brand">SMC_APEX v13.0.0</div>
-                <div class="meta-label-sub">UR TRADER TERMINAL</div>
+                <div class="meta-label-sub">URTRADER TERMINAL</div>
             </div>
             <div id="sys-status" style="color: var(--gold)">INIT...</div>
         </header>
@@ -241,42 +228,26 @@
         </nav>
 
         <main class="hero-display">
-            <!-- HERO META ROW - DENGAN SWING HIGH & LOW -->
             <div class="hero-meta-row">
-                <!-- ADX -->
                 <div class="adx-status ranging" id="adx-status">
                     <span>ADX</span>
                     <span class="adx-value" id="adx-value">--</span>
-                    <div class="adx-bar-container">
-                        <div class="adx-bar" id="adx-bar"></div>
-                    </div>
+                    <div class="adx-bar-container"><div class="adx-bar" id="adx-bar"></div></div>
                 </div>
-                
-                <!-- EMA34 -->
                 <div class="ema34-status" id="ema34-status">
                     <span>📊 EMA34</span>
                     <span class="ema34-value" id="ema34-value">--</span>
                 </div>
-                
-                <!-- SWING HIGH (baru) -->
                 <div class="swing-high" id="swing-high-container">
                     <span>📈 SWING H:</span>
                     <span class="swing-high-value" id="swing-high-value">--</span>
                 </div>
-                
-                <!-- SWING LOW (baru) -->
                 <div class="swing-low" id="swing-low-container">
                     <span>📉 SWING L:</span>
                     <span class="swing-low-value" id="swing-low-value">--</span>
                 </div>
-                
-                <!-- FVG -->
                 <div class="meta-fvg" id="fvg-status" style="color: var(--blue);">FVG: ACTIVE</div>
-                
-                <!-- BIAS -->
                 <div class="meta-bias">BIAS: <span id="pattern-val" style="color: var(--blue);">SCANNING</span></div>
-                
-                <!-- LIQUIDITY STATUS -->
                 <div class="liquidity-status" id="liquidity-status">⚡ AWAITING SWEEP</div>
             </div>
             <div id="live-price" onclick="smartCopy('live-price')">0.00</div>
@@ -302,9 +273,7 @@
                     </div>
                     <div class="rsi-track"><div id="rsi-bar"></div></div>
                 </div>
-                <div class="adx-recommendation ranging" id="adx-recommendation">
-                    📊 ADX: Menghitung...
-                </div>
+                <div class="adx-recommendation ranging" id="adx-recommendation">📊 ADX: Menghitung...</div>
             </div>
         </section>
 
@@ -334,7 +303,8 @@
         sweepDetected: false, bosConfirmed: false, liquiditySide: null,
         adx: 25, ema34: 0, isTrending: false,
         lastSweepTime: 0, lastBosTime: 0,
-        lastTPHitTime: 0
+        lastTPHitTime: 0,
+        fvgEntryActive: false  // untuk tracking FVG entry zone
     };
     
     function getPrecision() { return currentPair === "XAUUSDT" ? 2 : 1; }
@@ -437,6 +407,7 @@
             engine.liquiditySide = "SELL";
             engine.lastSweepTime = now;
             engine.bosConfirmed = false;
+            engine.fvgEntryActive = false;
             updateLiquidityUI("SWEEP", "SELL");
             showAlert("🔥 LIQUIDITY SWEEP | HIGH TAKEN", "sweep");
             return true;
@@ -445,6 +416,7 @@
             engine.liquiditySide = "BUY";
             engine.lastSweepTime = now;
             engine.bosConfirmed = false;
+            engine.fvgEntryActive = false;
             updateLiquidityUI("SWEEP", "BUY");
             showAlert("🔥 LIQUIDITY SWEEP | LOW TAKEN", "sweep");
             return true;
@@ -459,17 +431,19 @@
             engine.bosConfirmed = true;
             engine.bias = "BULLISH_BOS";
             engine.lastBosTime = now;
+            engine.fvgEntryActive = true;
             updateLiquidityUI("BOS", "BULLISH");
-            showAlert("✅ BOS CONFIRMED | BULLISH", "bos");
             highlightFVGEntry();
+            showAlert("✅ BOS CONFIRMED | BULLISH", "bos");
             return true;
         } else if (engine.liquiditySide === "SELL" && currentPrice < engine.swingLow) {
             engine.bosConfirmed = true;
             engine.bias = "BEARISH_BOS";
             engine.lastBosTime = now;
+            engine.fvgEntryActive = true;
             updateLiquidityUI("BOS", "BEARISH");
-            showAlert("✅ BOS CONFIRMED | BEARISH", "bos");
             highlightFVGEntry();
+            showAlert("✅ BOS CONFIRMED | BEARISH", "bos");
             return true;
         }
         return false;
@@ -480,6 +454,7 @@
             if (engine.sweepDetected && !engine.bosConfirmed) {
                 engine.sweepDetected = false;
                 engine.liquiditySide = null;
+                engine.fvgEntryActive = false;
                 updateLiquidityUI("RESET", null);
             }
             engine.lastSwingHigh = engine.swingHigh;
@@ -498,6 +473,27 @@
         } else {
             elem.innerHTML = "⚡ AWAITING SWEEP";
             elem.className = "liquidity-status";
+        }
+    }
+    
+    function updateEntryZoneUI() {
+        const fvgElem = document.getElementById('fvg-status');
+        if (engine.bosConfirmed && engine.fvgEntryActive) {
+            fvgElem.innerHTML = "📈 ENTRY ZONE: FVG";
+            fvgElem.style.color = "var(--accent)";
+            fvgElem.style.borderColor = "var(--accent)";
+            fvgElem.style.background = "rgba(0, 255, 170, 0.15)";
+        } else if (engine.sweepDetected && !engine.bosConfirmed) {
+            fvgElem.innerHTML = "🎯 WAITING BOS";
+            fvgElem.style.color = "var(--orange)";
+            fvgElem.style.borderColor = "var(--orange)";
+            fvgElem.style.background = "rgba(255, 136, 77, 0.1)";
+        } else {
+            const isBullish = engine.bias === "BULLISH" || engine.bias === "BULLISH_BOS";
+            fvgElem.innerHTML = isBullish ? "FVG: BULL IMBALANCE" : "FVG: BEAR IMBALANCE";
+            fvgElem.style.color = isBullish ? "var(--accent)" : "var(--danger)";
+            fvgElem.style.borderColor = "var(--gold-dim)";
+            fvgElem.style.background = "rgba(0,0,0,0.6)";
         }
     }
     
@@ -541,25 +537,23 @@
         }
     }
     
-    // Update Swing High & Low di UI
     function updateSwingUI() {
         const prec = getPrecision();
         const swingHighElem = document.getElementById('swing-high-value');
         const swingLowElem = document.getElementById('swing-low-value');
-        
-        if (swingHighElem && engine.swingHigh > 0) {
-            swingHighElem.innerText = engine.swingHigh.toFixed(prec);
-        }
-        if (swingLowElem && engine.swingLow > 0) {
-            swingLowElem.innerText = engine.swingLow.toFixed(prec);
-        }
+        if (swingHighElem && engine.swingHigh > 0) swingHighElem.innerText = engine.swingHigh.toFixed(prec);
+        if (swingLowElem && engine.swingLow > 0) swingLowElem.innerText = engine.swingLow.toFixed(prec);
     }
     
     function highlightFVGEntry() {
-        ['r618', 'r705', 'r79'].forEach(id => {
+        engine.fvgEntryActive = true;
+        updateEntryZoneUI();
+        const fvgElements = ['r618', 'r705', 'r79'];
+        fvgElements.forEach(id => {
             const el = document.getElementById(id);
-            if (el) { el.classList.add('fvg-highlight'); setTimeout(() => el.classList.remove('fvg-highlight'), 1500); }
+            if (el) { el.classList.add('fvg-highlight'); setTimeout(() => el.classList.remove('fvg-highlight'), 2000); }
         });
+        showAlert("📈 ENTRY ZONE ACTIVE! Entry di area FVG", "entry");
     }
     
     function calculateSMCLevels() {
@@ -595,22 +589,34 @@
             engine.sl = engine.ote + (distToTP * 0.65);
         }
         engine.range = currentPair === "XAUUSDT" ? Math.abs(currentPrice - engine.tp) * 10 : Math.abs(currentPrice - engine.tp);
-        
-        // Update UI Swing High/Low
         updateSwingUI();
+        updateEntryZoneUI();
     }
     
+    // ==================== TP HIT DETECTION - DIPERBAIKI ====================
     function checkTPHit(currentPrice) {
         if (engine.tp === 0) return false;
-        const isBullish = engine.bias.includes("BULL");
-        let tpHit = (isBullish && currentPrice >= engine.tp) || (!isBullish && currentPrice <= engine.tp);
+        const isBullish = engine.bias === "BULLISH_BOS" || engine.bias === "BULLISH";
+        let tpHit = false;
+        if (isBullish && currentPrice >= engine.tp) {
+            tpHit = true;
+        } else if (!isBullish && currentPrice <= engine.tp) {
+            tpHit = true;
+        }
+        
         if (tpHit && (Date.now() - engine.lastTPHitTime) > 10000) {
             engine.lastTPHitTime = Date.now();
+            // Reset semua status
             engine.sweepDetected = false;
             engine.bosConfirmed = false;
             engine.liquiditySide = null;
+            engine.fvgEntryActive = false;
             updateLiquidityUI("RESET", null);
-            forceRecalculateStructure();
+            updateEntryZoneUI();
+            // Recalculate struktur berdasarkan data terbaru
+            if (candleData.length) {
+                forceRecalculateStructure();
+            }
             showAlert("✅ TP TARGET HIT! Structure recalculated", "tp");
             return true;
         }
@@ -661,12 +667,18 @@
         updateEMA34UI(currentPrice);
         
         const biasDisplay = document.getElementById('pattern-val');
-        if (adx < 20) {
+        if (engine.bosConfirmed) {
+            biasDisplay.innerHTML = engine.bias === "BULLISH_BOS" ? "BOS BULLISH ✓" : "BOS BEARISH ✓";
+            biasDisplay.style.color = "var(--accent)";
+        } else if (engine.sweepDetected) {
+            biasDisplay.innerHTML = engine.liquiditySide === "BUY" ? "SWEEP (BUY ZONE)" : "SWEEP (SELL ZONE)";
+            biasDisplay.style.color = "var(--orange)";
+        } else if (adx < 20) {
             biasDisplay.innerHTML = `⚠️ RANGING (ADX ${adx.toFixed(1)})`;
             biasDisplay.style.color = "var(--silver-dark)";
         } else {
-            biasDisplay.innerHTML = engine.bias.replace('_', ' ');
-            biasDisplay.style.color = engine.bias.includes("BULL") ? "var(--accent)" : "var(--danger)";
+            biasDisplay.innerHTML = engine.bias === "BULLISH" ? "PREMIUM ZONE" : "DISCOUNT ZONE";
+            biasDisplay.style.color = engine.bias === "BULLISH" ? "var(--accent)" : "var(--danger)";
         }
         
         const sysDiv = document.getElementById('sys-status');
@@ -681,7 +693,12 @@
             sysDiv.style.color = "var(--gold)";
         }
         
+        // Update FVG status berdasarkan kondisi
+        updateEntryZoneUI();
+        
+        // Check TP Hit setiap update
         checkTPHit(currentPrice);
+        
         lastPrice = currentPrice;
     }
     
@@ -712,12 +729,14 @@
                 }
             } catch (err) {}
         };
+        wsPrice.onerror = () => { console.log("WebSocket error"); };
+        wsPrice.onclose = () => { setTimeout(() => { if (wsPrice?.readyState !== WebSocket.OPEN) initWebSocket(); }, 3000); };
     }
     
     function showAlert(message, type) {
         const toast = document.getElementById('toastCopy');
         toast.innerText = message;
-        toast.style.borderColor = type === "sweep" ? "var(--orange)" : (type === "tp" ? "var(--blue)" : "var(--accent)");
+        toast.style.borderColor = type === "sweep" ? "var(--orange)" : (type === "tp" ? "var(--blue)" : (type === "entry" ? "var(--accent)" : "var(--accent)"));
         toast.style.color = type === "sweep" ? "var(--orange)" : (type === "tp" ? "var(--blue)" : "var(--accent)");
         toast.style.opacity = "1";
         setTimeout(() => { toast.style.opacity = "0"; toast.style.borderColor = "var(--accent)"; toast.style.color = "var(--accent)"; }, 2500);
@@ -755,7 +774,9 @@
         engine.sweepDetected = false;
         engine.bosConfirmed = false;
         engine.liquiditySide = null;
+        engine.fvgEntryActive = false;
         updateLiquidityUI("RESET", null);
+        updateEntryZoneUI();
         await fetchKlines();
         initWebSocket();
         document.querySelectorAll('.btn-tab').forEach(btn => btn.classList.remove('active'));
