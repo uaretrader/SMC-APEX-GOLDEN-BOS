@@ -30,7 +30,6 @@
         .brand { font-weight: 900; font-size: 0.85rem; letter-spacing: 2px; color: var(--accent); text-align: left; }
         .meta-label-sub { font-size: 0.55rem; color: var(--silver-dark); letter-spacing: 3px; font-family: 'JetBrains Mono'; font-weight: 800; text-align: left; }
         
-        /* WebSocket Status Indicator - Style baru (tidak mengganggu existing) */
         #sys-status { 
             font-family: 'JetBrains Mono'; 
             font-size: 0.65rem; 
@@ -88,17 +87,6 @@
             font-size: 0.65rem;
             letter-spacing: 0.5px;
             align-items: center;
-        }
-        
-        .meta-item {
-            background: rgba(0,0,0,0.6);
-            padding: 4px 12px;
-            border-radius: 20px;
-            border: 1px solid var(--gold-dim);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s ease;
         }
         
         .adx-status {
@@ -179,13 +167,6 @@
             color: var(--accent);
             background: rgba(0, 255, 170, 0.15);
             padding: 4px 16px;
-        }
-        .liquidity-status.entry {
-            border-color: var(--accent);
-            color: var(--accent);
-            background: rgba(0, 255, 170, 0.25);
-            padding: 4px 16px;
-            animation: pulse 0.8s infinite;
         }
         
         @media (max-width: 700px) {
@@ -337,6 +318,9 @@
     let wsReconnectAttempts = 0;
     let wsHeartbeatInterval = null;
     let wsLastMessageTime = Date.now();
+    let stuckCheckInterval = null;
+    let periodicInterval = null;
+    let isReloading = false;
     
     let engine = { 
         f618: 0, ote: 0, deep: 0, sl: 0, tp: 0, range: 0, bias: "SCANNING",
@@ -352,10 +336,9 @@
     function getPrecision() { return currentPair === "XAUUSDT" ? 2 : 1; }
     
     // ==================== WEBSOCKET STATUS INDICATOR ====================
-    function updateWSStatus(status, isConnected = false) {
+    function updateWSStatus(status) {
         const wsStatusDot = document.getElementById('ws-status-dot');
         const wsStatusText = document.getElementById('ws-status-text');
-        
         if (!wsStatusDot || !wsStatusText) return;
         
         if (status === 'live') {
@@ -375,6 +358,13 @@
             wsStatusText.innerText = 'INIT';
             document.getElementById('sys-status').style.color = 'var(--gold)';
         }
+    }
+    
+    // ==================== STOP ALL INTERVALS ====================
+    function stopAllIntervals() {
+        if (wsHeartbeatInterval) { clearInterval(wsHeartbeatInterval); wsHeartbeatInterval = null; }
+        if (stuckCheckInterval) { clearInterval(stuckCheckInterval); stuckCheckInterval = null; }
+        if (periodicInterval) { clearInterval(periodicInterval); periodicInterval = null; }
     }
     
     // ==================== ADX REAL-TIME ====================
@@ -421,9 +411,7 @@
             return Math.min(100, Math.max(0, isNaN(dx) ? 25 : dx));
         } catch (error) { return 25; }
     }
-    function calculateADX() { return lastPrice > 0 ? calculateADXWithTick(lastPrice) : 25; }
     
-    // ==================== RSI ====================
     function computeRSI(currentPrice) {
         if (!candleData.length || candleData.length < 15) return 50;
         const period = 14;
@@ -549,19 +537,13 @@
         if (engine.bosConfirmed && engine.fvgEntryActive) {
             fvgElem.innerHTML = "📈 ENTRY ZONE: FVG";
             fvgElem.style.color = "var(--accent)";
-            fvgElem.style.borderColor = "var(--accent)";
-            fvgElem.style.background = "rgba(0, 255, 170, 0.15)";
         } else if (engine.sweepDetected && !engine.bosConfirmed) {
             fvgElem.innerHTML = "🎯 WAITING BOS";
             fvgElem.style.color = "var(--orange)";
-            fvgElem.style.borderColor = "var(--orange)";
-            fvgElem.style.background = "rgba(255, 136, 77, 0.1)";
         } else {
             const isBullish = engine.bias === "BULLISH" || engine.bias === "BULLISH_BOS";
             fvgElem.innerHTML = isBullish ? "FVG: BULL IMBALANCE" : "FVG: BEAR IMBALANCE";
             fvgElem.style.color = isBullish ? "var(--accent)" : "var(--danger)";
-            fvgElem.style.borderColor = "var(--gold-dim)";
-            fvgElem.style.background = "rgba(0,0,0,0.6)";
         }
     }
     
@@ -746,10 +728,7 @@
             biasDisplay.style.color = engine.bias === "BULLISH" ? "var(--accent)" : "var(--danger)";
         }
         
-        // Update FVG status
         updateEntryZoneUI();
-        
-        // Check TP Hit
         checkTPHit(currentPrice);
         
         lastPrice = currentPrice;
@@ -760,40 +739,38 @@
             const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${currentPair}&interval=${currentTF}&limit=120`;
             const resp = await fetch(url);
             const data = await resp.json();
-            candleData = data.map(d => ({ o: parseFloat(d[1]), h: parseFloat(d[2]), l: parseFloat(d[3]), c: parseFloat(d[4]), t: d[0], v: parseFloat(d[5]) }));
+            if (!Array.isArray(data)) throw new Error("Invalid data");
+            candleData = data.map(d => ({ o: parseFloat(d[1]), h: parseFloat(d[2]), l: parseFloat(d[3]), c: parseFloat(d[4]), t: d[0] }));
             calculateSMCLevels();
             if (candleData.length) updateUI(candleData[candleData.length - 1].c);
             return true;
-        } catch (err) { return false; }
+        } catch (err) { console.error("Fetch error:", err); return false; }
     }
     
-    // ==================== WEBSOCKET DENGAN HEARTBEAT & AUTO-RECONNECT ====================
+    // ==================== WEBSOCKET DENGAN CLEAN CLOSE ====================
     function initWebSocket() {
+        // Bersihkan WebSocket lama
         if (wsPrice) {
-            if (wsHeartbeatInterval) clearInterval(wsHeartbeatInterval);
-            wsPrice.close();
+            try {
+                wsPrice.onopen = null;
+                wsPrice.onmessage = null;
+                wsPrice.onerror = null;
+                wsPrice.onclose = null;
+                wsPrice.close();
+            } catch(e) {}
+            wsPrice = null;
         }
         
-        updateWSStatus('reconnect', false);
+        updateWSStatus('reconnect');
         
-        wsPrice = new WebSocket(`wss://fstream.binance.com/ws/${currentPair.toLowerCase()}@aggTrade`);
+        const wsUrl = `wss://fstream.binance.com/ws/${currentPair.toLowerCase()}@aggTrade`;
+        wsPrice = new WebSocket(wsUrl);
         
         wsPrice.onopen = () => {
             wsReconnectAttempts = 0;
             wsLastMessageTime = Date.now();
-            updateWSStatus('live', true);
-            
-            // Heartbeat: cek setiap 30 detik apakah ada pesan masuk
-            if (wsHeartbeatInterval) clearInterval(wsHeartbeatInterval);
-            wsHeartbeatInterval = setInterval(() => {
-                const now = Date.now();
-                if (now - wsLastMessageTime > 35000) {
-                    // Tidak ada pesan dalam 35 detik, anggap koneksi bermasalah
-                    if (wsPrice && wsPrice.readyState === WebSocket.OPEN) {
-                        wsPrice.close();
-                    }
-                }
-            }, 30000);
+            updateWSStatus('live');
+            console.log("✅ WebSocket Connected -", currentPair);
         };
         
         wsPrice.onmessage = (event) => {
@@ -811,18 +788,42 @@
         };
         
         wsPrice.onerror = () => {
-            updateWSStatus('reconnect', false);
+            updateWSStatus('reconnect');
+            console.warn("⚠️ WebSocket error -", currentPair);
         };
         
         wsPrice.onclose = () => {
-            updateWSStatus('reconnect', false);
-            setTimeout(() => {
-                if (!wsPrice || wsPrice.readyState === WebSocket.CLOSED) {
-                    wsReconnectAttempts++;
-                    initWebSocket();
-                }
-            }, Math.min(3000 + (wsReconnectAttempts * 1000), 10000));
+            if (!isReloading) {
+                updateWSStatus('reconnect');
+                console.warn("⚠️ WebSocket closed, reconnecting in 2s...");
+                setTimeout(() => {
+                    if (!isReloading) initWebSocket();
+                }, 2000);
+            }
         };
+    }
+    
+    function startPeriodicUpdates() {
+        if (periodicInterval) clearInterval(periodicInterval);
+        periodicInterval = setInterval(() => { 
+            if (lastPrice > 0 && !isReloading) { 
+                calculateSMCLevels(); 
+                updateUI(lastPrice); 
+            } 
+        }, 2000);
+    }
+    
+    function startStuckChecker() {
+        if (stuckCheckInterval) clearInterval(stuckCheckInterval);
+        stuckCheckInterval = setInterval(() => {
+            const now = Date.now();
+            if (now - wsLastMessageTime > 10000 && wsPrice && wsPrice.readyState === WebSocket.OPEN && !isReloading) {
+                console.warn("⚠️ STUCK DETECTED! Force reconnect...");
+                showAlert("⚠️ Data stuck! Reconnecting...", "reconnect");
+                if (wsPrice) wsPrice.close();
+                setTimeout(() => initWebSocket(), 1000);
+            }
+        }, 5000);
     }
     
     function showAlert(message, type) {
@@ -831,7 +832,7 @@
         toast.style.borderColor = type === "sweep" ? "var(--orange)" : (type === "tp" ? "var(--blue)" : (type === "entry" ? "var(--accent)" : "var(--accent)"));
         toast.style.color = type === "sweep" ? "var(--orange)" : (type === "tp" ? "var(--blue)" : "var(--accent)");
         toast.style.opacity = "1";
-        setTimeout(() => { toast.style.opacity = "0"; toast.style.borderColor = "var(--accent)"; toast.style.color = "var(--accent)"; }, 2500);
+        setTimeout(() => { toast.style.opacity = "0"; }, 2500);
     }
     
     function showToastMsg(msg) {
@@ -862,30 +863,57 @@
     }
     
     async function fullReload() {
+        if (isReloading) return;
+        isReloading = true;
+        
+        stopAllIntervals();
+        
         document.getElementById('main-terminal').classList.add('syncing');
+        
+        // Reset status
         engine.sweepDetected = false;
         engine.bosConfirmed = false;
         engine.liquiditySide = null;
         engine.fvgEntryActive = false;
         updateLiquidityUI("RESET", null);
         updateEntryZoneUI();
+        
         await fetchKlines();
         initWebSocket();
+        
+        startPeriodicUpdates();
+        startStuckChecker();
+        
+        // Update active button styles
         document.querySelectorAll('.btn-tab').forEach(btn => btn.classList.remove('active'));
         document.getElementById(`btn-${currentPair}`)?.classList.add('active');
         document.getElementById(`tf-${currentTF}`)?.classList.add('active');
-        setTimeout(() => document.getElementById('main-terminal').classList.remove('syncing'), 500);
+        
+        setTimeout(() => {
+            document.getElementById('main-terminal').classList.remove('syncing');
+            isReloading = false;
+        }, 500);
     }
     
+    // Event listeners
     document.querySelectorAll('[data-pair]').forEach(btn => {
-        btn.onclick = () => { currentPair = btn.dataset.pair; localStorage.setItem('lastPair', currentPair); fullReload(); };
+        btn.onclick = () => { 
+            if (currentPair === btn.dataset.pair) return;
+            currentPair = btn.dataset.pair; 
+            localStorage.setItem('lastPair', currentPair); 
+            fullReload(); 
+        };
     });
     document.querySelectorAll('[data-tf]').forEach(btn => {
-        btn.onclick = () => { currentTF = btn.dataset.tf; localStorage.setItem('lastTF', currentTF); fullReload(); };
+        btn.onclick = () => { 
+            if (currentTF === btn.dataset.tf) return;
+            currentTF = btn.dataset.tf; 
+            localStorage.setItem('lastTF', currentTF); 
+            fullReload(); 
+        };
     });
     
     setInterval(updateClockAndSession, 1000);
-    setInterval(() => { if (lastPrice > 0) { calculateSMCLevels(); updateUI(lastPrice); } }, 4000);
     
     fullReload();
 </script>
