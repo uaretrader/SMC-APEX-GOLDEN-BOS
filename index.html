@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SMC APEX v14.3.0 | URTRADER TERMINAL</title>
+    <title>SMC APEX v14.5.0 | URTRADER TERMINAL</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;800&display=swap');
         
@@ -199,10 +199,10 @@
         
         .rsi-panel {
             margin-top: 16px;
-            margin-bottom: 8px;
-            padding: 12px 16px;
+            margin-bottom: 12px;
+            padding: 10px 14px;
             border: 1px solid var(--gold-dim);
-            border-radius: 14px;
+            border-radius: 12px;
             background: rgba(0, 0, 0, 0.4);
             text-align: left;
             width: 100%;
@@ -211,10 +211,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         .rsi-tag {
-            font-size: 0.6rem;
+            font-size: 0.55rem;
             font-weight: 900;
             color: var(--silver-dark);
             font-family: 'JetBrains Mono';
@@ -222,12 +222,12 @@
         }
         #rsi-val {
             font-family: 'JetBrains Mono';
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             font-weight: 800;
             color: var(--silver-bright);
         }
         .rsi-track {
-            height: 4px;
+            height: 3px;
             background: #2a2a2a;
             border-radius: 10px;
             overflow: hidden;
@@ -241,10 +241,10 @@
         
         .mtf-paragraph-card {
             background: rgba(0,0,0,0.4);
-            border-radius: 14px;
-            padding: 14px 16px;
-            margin-top: 12px;
-            border: 1px solid var(--gold-dim);
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin: 0 0 10px 0;
+            border: 1px solid rgba(255, 204, 0, 0.15);
             cursor: pointer;
             transition: all 0.2s ease;
         }
@@ -254,40 +254,40 @@
         }
         .mtf-paragraph-text {
             font-family: 'JetBrains Mono';
-            font-size: 0.7rem;
-            line-height: 1.5;
-            letter-spacing: 0.3px;
+            font-size: 0.65rem;
+            line-height: 1.4;
+            letter-spacing: 0.2px;
             color: var(--silver-bright);
         }
         .mtf-highlight {
             font-weight: 800;
-            padding: 2px 6px;
-            border-radius: 12px;
+            padding: 1px 4px;
+            border-radius: 8px;
             display: inline-block;
-            background: rgba(0, 255, 170, 0.15);
+            background: rgba(0, 255, 170, 0.12);
             color: var(--accent);
         }
         .mtf-highlight-bull {
-            background: rgba(0, 204, 136, 0.2);
+            background: rgba(0, 204, 136, 0.15);
             color: #00cc88;
         }
         .mtf-highlight-bear {
-            background: rgba(255, 136, 102, 0.2);
+            background: rgba(255, 136, 102, 0.15);
             color: #ff8866;
         }
         .mtf-highlight-neutral {
-            background: rgba(170, 170, 170, 0.2);
+            background: rgba(170, 170, 170, 0.15);
             color: #cccccc;
         }
         
         .orderblock-status {
             background: rgba(0,0,0,0.4);
-            border-radius: 12px;
-            padding: 10px 14px;
-            margin: 10px 0;
-            font-size: 0.6rem;
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin: 8px 0;
+            font-size: 0.55rem;
             font-family: 'JetBrains Mono';
-            border-left: 3px solid var(--purple);
+            border-left: 2px solid var(--purple);
             transition: all 0.2s ease;
         }
         .ob-bullish { border-left-color: var(--accent); color: var(--accent); background: rgba(0, 255, 170, 0.05); }
@@ -299,41 +299,42 @@
                 font-size: 0.55rem;
                 padding: 3px 10px;
             }
-            .mtf-paragraph-text { font-size: 0.6rem; }
+            .mtf-paragraph-text { font-size: 0.55rem; }
         }
         
         #live-price { font-family: 'JetBrains Mono'; font-size: 2.5rem; font-weight: 800; letter-spacing: -2px; color: #fff; line-height: 1; cursor: pointer; transition: color 0.08s linear; word-break: break-word; text-align: left; width: 100%; margin-top: 4px; }
         .price-decimal { color: var(--accent); opacity: 0.7; font-size: 2.2rem; }
         
-        .data-grid { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; background: #0b0b0b; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-        .data-item { background: var(--bg); padding: 12px 4px; text-align: left; padding-left: 12px; border-right: 1px solid rgba(255,255,255,0.03); transition: background 0.1s; cursor: pointer; }
-        .data-label { font-size: 0.45rem; color: var(--silver-medium); text-transform: uppercase; margin-bottom: 6px; display: block; font-weight: 700; letter-spacing: 0.8px; text-align: left; }
-        .data-val { font-family: 'JetBrains Mono'; font-size: 0.75rem; color: #fff; font-weight: 800; text-align: left; line-height: 1.2; }
+        .data-grid { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; background: #0b0b0b; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+        .data-item { background: var(--bg); padding: 10px 4px; text-align: left; padding-left: 12px; border-right: 1px solid rgba(255,255,255,0.03); transition: background 0.1s; cursor: pointer; }
+        .data-item:last-child { border-right: none; }
+        .data-label { font-size: 0.45rem; color: var(--silver-medium); text-transform: uppercase; margin-bottom: 5px; display: block; font-weight: 700; letter-spacing: 0.8px; text-align: left; }
+        .data-val { font-family: 'JetBrains Mono'; font-size: 0.7rem; color: #fff; font-weight: 800; text-align: left; line-height: 1.2; }
         .entry-gold { color: var(--gold) !important; text-shadow: 0 0 4px rgba(255, 204, 0, 0.5); }
         .fvg-highlight { animation: fvgPulse 0.8s ease 2; text-shadow: 0 0 8px var(--accent); }
         @keyframes fvgPulse { 0% { text-shadow: 0 0 0 var(--accent); } 100% { text-shadow: 0 0 12px var(--accent); } }
         
-        .terminal-box { padding: 14px 16px; width: 100%; }
-        .card { background: var(--card-bg); border: 1px solid #151515; border-radius: 14px; padding: 14px; backdrop-filter: blur(2px); }
+        .terminal-box { padding: 0 16px 14px 16px; width: 100%; }
+        .card { background: var(--card-bg); border: 1px solid #151515; border-radius: 12px; padding: 12px; backdrop-filter: blur(2px); }
         
         .footer-info { 
-            padding: 10px 0 0 0;
+            padding: 8px 0 0 0;
             background: transparent; 
             border-radius: 12px; 
             display: flex; 
             justify-content: flex-start;
             align-items: center; 
             flex-wrap: wrap; 
-            gap: 12px;
-            margin-top: 12px;
+            gap: 10px;
+            margin-top: 8px;
         }
         .session-module-new, .date-module-new, .clock-module-new {
             font-weight: 800;
             background: #080808;
-            padding: 5px 14px;
-            border-radius: 20px;
+            padding: 4px 12px;
+            border-radius: 16px;
             letter-spacing: 1px;
-            font-size: 0.6rem;
+            font-size: 0.55rem;
             font-family: 'JetBrains Mono';
             border: 1px solid #1f1f1f;
         }
@@ -357,7 +358,7 @@
     <div class="terminal-container" id="main-terminal">
         <header class="header">
             <div class="brand-container">
-                <div class="brand">SMC_APEX v14.3.0</div>
+                <div class="brand">SMC_APEX v14.5.0</div>
                 <div class="meta-label-sub">URTRADER TERMINAL</div>
             </div>
             <div id="sys-status">
@@ -416,7 +417,12 @@
             </div>
         </main>
 
+        <!-- DATA GRID: SL | ZONA ENTRY | TP | RANGE -->
         <section class="data-grid">
+            <div class="data-item" onclick="smartCopy('rSL')">
+                <span class="data-label" style="color:var(--danger)">STOP LOSS</span>
+                <span class="data-val" id="rSL" style="color:var(--blue)">0.00</span>
+            </div>
             <div class="data-item" onclick="smartCopy('entry-zone')">
                 <span class="data-label" style="color:var(--accent)">ZONA ENTRY</span>
                 <div class="data-val" id="entry-zone">
@@ -424,16 +430,12 @@
                     <span id="r79" class="entry-gold">0.00</span>
                 </div>
             </div>
-            <div class="data-item" onclick="smartCopy('rSL')">
-                <span class="data-label" style="color:var(--danger)">STOP LOSS</span>
-                <span class="data-val" id="rSL" style="color:var(--danger)">0.00</span>
-            </div>
             <div class="data-item" onclick="smartCopy('rTP')">
-                <span class="data-label" style="color:var(--blue)">TP (23% EXT)</span>
+                <span class="data-label" style="color:var(--blue)">TP (23%)</span>
                 <span class="data-val" id="rTP" style="color:var(--blue)">0.00</span>
             </div>
             <div class="data-item" onclick="smartCopy('rRange')">
-                <span class="data-label" style="color:var(--accent)">RANGE (PIPS)</span>
+                <span class="data-label" style="color:var(--accent)">RANGE</span>
                 <span class="data-val" id="rRange" style="color:var(--accent)">0.00</span>
             </div>
         </section>
@@ -536,7 +538,43 @@
         setTimeout(() => { isManualDisconnect = false; }, 100);
     }
     
-    // ==================== ADX dengan Tick Update ====================
+    // ==================== FRACTAL SWING HIGH/LOW DETECTION ====================
+    function detectFractalSwingPoints(data, lookback = 5) {
+        if (!data || data.length < lookback * 2 + 1) return { swingHigh: 0, swingLow: Infinity };
+        
+        let swingHigh = 0;
+        let swingLow = Infinity;
+        
+        for (let i = lookback; i < data.length - lookback; i++) {
+            const currentHigh = data[i].h;
+            const currentLow = data[i].l;
+            
+            let isSwingHigh = true;
+            for (let j = i - lookback; j <= i + lookback; j++) {
+                if (j !== i && data[j].h >= currentHigh) {
+                    isSwingHigh = false;
+                    break;
+                }
+            }
+            
+            let isSwingLow = true;
+            for (let j = i - lookback; j <= i + lookback; j++) {
+                if (j !== i && data[j].l <= currentLow) {
+                    isSwingLow = false;
+                    break;
+                }
+            }
+            
+            if (isSwingHigh && currentHigh > swingHigh) swingHigh = currentHigh;
+            if (isSwingLow && currentLow < swingLow) swingLow = currentLow;
+        }
+        
+        if (swingHigh === 0) swingHigh = Math.max(...data.map(c => c.h));
+        if (swingLow === Infinity) swingLow = Math.min(...data.map(c => c.l));
+        
+        return { swingHigh, swingLow };
+    }
+    
     function calculateADXWithTick(currentPrice) {
         if (!candleData.length || candleData.length < 28) return 25;
         try {
@@ -778,43 +816,65 @@
     
     function calculateSMCLevels() {
         if (!candleData.length || candleData.length < 30) return;
-        const lookback = currentTF === "5m" ? 40 : (currentTF === "15m" ? 50 : 80);
+        
+        let lookback;
+        switch(currentTF) {
+            case "5m": lookback = 40; break;
+            case "15m": lookback = 50; break;
+            case "1h": lookback = 60; break;
+            default: lookback = 50;
+        }
+        
         const slice = candleData.slice(-Math.min(candleData.length, lookback));
-        const swingHigh = Math.max(...slice.map(c => c.h));
-        const swingLow = Math.min(...slice.map(c => c.l));
+        const fractalPoints = detectFractalSwingPoints(slice, 3);
+        
+        let swingHigh = fractalPoints.swingHigh;
+        let swingLow = fractalPoints.swingLow;
+        
+        if (swingHigh <= swingLow) {
+            swingHigh = Math.max(...slice.map(c => c.h));
+            swingLow = Math.min(...slice.map(c => c.l));
+        }
+        
         const lastCandle = candleData[candleData.length - 1];
         const currentPrice = lastCandle.c;
         const range = swingHigh - swingLow;
+        
         if (range <= 0) return;
-        engine.swingHigh = swingHigh; engine.swingLow = swingLow;
+        
+        engine.swingHigh = swingHigh;
+        engine.swingLow = swingLow;
         resetSweepIfStructureChanged();
-        if (!engine.bosConfirmed) { engine.bias = currentPrice > (swingHigh + swingLow) / 2 ? "BULLISH" : "BEARISH"; }
+        
+        if (!engine.bosConfirmed) { 
+            engine.bias = currentPrice > (swingHigh + swingLow) / 2 ? "BULLISH" : "BEARISH"; 
+        }
+        
         const isBullish = engine.bosConfirmed ? engine.bias === "BULLISH_BOS" : engine.bias === "BULLISH";
+        
         if (isBullish) {
             engine.f618 = swingLow + (range * 0.618);
             engine.deep = swingLow + (range * 0.79);
             engine.tp = swingHigh + (range * 0.23);
-            const distToTP = Math.abs(engine.tp - engine.f618);
-            engine.sl = engine.f618 - (distToTP * 0.65);
+            const distanceFromEntryToDeep = Math.abs(engine.deep - engine.f618);
+            engine.sl = engine.f618 - (distanceFromEntryToDeep * 0.65);
         } else {
             engine.f618 = swingHigh - (range * 0.618);
             engine.deep = swingHigh - (range * 0.79);
             engine.tp = swingLow - (range * 0.23);
-            const distToTP = Math.abs(engine.f618 - engine.tp);
-            engine.sl = engine.f618 + (distToTP * 0.65);
+            const distanceFromEntryToDeep = Math.abs(engine.f618 - engine.deep);
+            engine.sl = engine.f618 + (distanceFromEntryToDeep * 0.65);
         }
-        updateSwingUI(); updateEntryZoneUI(); updateMTFAnalysis(); detectOrderBlock();
+        
+        updateSwingUI(); 
+        updateEntryZoneUI(); 
+        updateMTFAnalysis(); 
+        detectOrderBlock();
     }
     
     function updateRangeRealTime(currentPrice) {
         if (engine.tp === 0) return;
-        const isBullish = engine.bias === "BULLISH_BOS" || engine.bias === "BULLISH";
-        let distanceToTP;
-        if (isBullish) {
-            distanceToTP = Math.abs(currentPrice - engine.tp);
-        } else {
-            distanceToTP = Math.abs(currentPrice - engine.tp);
-        }
+        const distanceToTP = Math.abs(currentPrice - engine.tp);
         engine.range = currentPair === "XAUUSDT" ? distanceToTP * 10 : distanceToTP;
         const rRangeElem = document.getElementById('rRange');
         if (rRangeElem) rRangeElem.innerText = engine.range.toFixed(1);
@@ -838,13 +898,8 @@
     
     function forceRecalculateStructure() {
         if (!candleData.length || candleData.length < 30) return;
-        const lookback = currentTF === "5m" ? 40 : (currentTF === "15m" ? 50 : 80);
-        const slice = candleData.slice(-Math.min(candleData.length, lookback));
-        const newSwingHigh = Math.max(...slice.map(c => c.h)), newSwingLow = Math.min(...slice.map(c => c.l));
-        engine.swingHigh = newSwingHigh; engine.swingLow = newSwingLow; engine.lastSwingHigh = newSwingHigh; engine.lastSwingLow = newSwingLow;
-        const lastCandle = candleData[candleData.length - 1];
-        engine.bias = lastCandle.c > (newSwingHigh + newSwingLow) / 2 ? "BULLISH" : "BEARISH";
-        calculateSMCLevels(); if (lastPrice > 0) updateUI(lastPrice);
+        calculateSMCLevels();
+        if (lastPrice > 0) updateUI(lastPrice);
     }
     
     function updateUI(currentPrice) {
@@ -869,7 +924,6 @@
         if (rSL) rSL.innerText = engine.sl.toFixed(prec);
         if (rTP) rTP.innerText = engine.tp.toFixed(prec);
         
-        // Update range real-time berdasarkan current price
         updateRangeRealTime(currentPrice);
         
         const rsi = computeRSI(currentPrice);
@@ -899,7 +953,7 @@
     
     async function fetchKlines() {
         try {
-            const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${currentPair}&interval=${currentTF}&limit=150`;
+            const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${currentPair}&interval=${currentTF}&limit=200`;
             const resp = await fetch(url);
             const data = await resp.json();
             if (!Array.isArray(data)) throw new Error("Invalid data");
@@ -912,7 +966,6 @@
     
     function initWebSocket() {
         cleanupWebSocket();
-        
         updateWSStatus('connecting', 'CONNECTING');
         
         const wsUrl = `wss://fstream.binance.com/ws/${currentPair.toLowerCase()}@aggTrade`;
@@ -923,9 +976,7 @@
             connectionAttempts = 0;
             updateWSStatus('live', 'LIVE');
             wsMessageTimeout = setTimeout(() => {
-                if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
-                    updateWSStatus('live', 'LIVE');
-                }
+                if (wsConnection && wsConnection.readyState === WebSocket.OPEN) updateWSStatus('live', 'LIVE');
             }, 1000);
         };
         
@@ -948,18 +999,14 @@
                 updateWSStatus('reconnect', 'RECONNECT');
                 if (reconnectTimer) clearTimeout(reconnectTimer);
                 reconnectTimer = setTimeout(() => {
-                    if (!isReloading && !isManualDisconnect) {
-                        initWebSocket();
-                    }
+                    if (!isReloading && !isManualDisconnect) initWebSocket();
                 }, 2000);
             }
         };
         
         wsConnection.onerror = (error) => {
             console.warn(`WebSocket error: ${currentPair}`, error);
-            if (!isManualDisconnect && !isReloading) {
-                updateWSStatus('reconnect', 'ERROR');
-            }
+            if (!isManualDisconnect && !isReloading) updateWSStatus('reconnect', 'ERROR');
         };
     }
     
@@ -995,6 +1042,11 @@
     window.smartCopy = function(id) {
         let textToCopy = "";
         if (id === 'mtf-paragraph') { const mtfElem = document.getElementById('mtf-paragraph-text'); if (mtfElem) textToCopy = mtfElem.innerText; }
+        else if (id === 'entry-zone') {
+            const r618 = document.getElementById('r618');
+            const r79 = document.getElementById('r79');
+            if (r618 && r79) textToCopy = `Entry 0.618: ${r618.innerText} | Entry 0.79: ${r79.innerText}`;
+        }
         else { const el = document.getElementById(id); if (el) textToCopy = el.innerText; }
         if (!textToCopy) return;
         navigator.clipboard.writeText(textToCopy);
@@ -1015,7 +1067,6 @@
         const dateElem = document.getElementById('date-display-new');
         const sessionElem = document.getElementById('session-tag-new');
         if (clockElem) clockElem.innerText = now.toLocaleTimeString('id-ID');
-        // Format tanggal: DD/MM/YY
         const day = String(now.getDate()).padStart(2, '0');
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const year = String(now.getFullYear()).slice(-2);
@@ -1039,11 +1090,9 @@
         disableButtons(true);
         document.getElementById('main-terminal')?.classList.add('syncing');
         
-        // Clean up everything
         stopAllIntervals();
         cleanupWebSocket();
         
-        // Reset state
         engine.sweepDetected = false; 
         engine.bosConfirmed = false; 
         engine.liquiditySide = null; 
@@ -1052,15 +1101,12 @@
         updateEntryZoneUI();
         updateWSStatus('connecting', 'LOADING');
         
-        // Fetch new data
         await fetchKlines();
         
-        // Start fresh connections
         initWebSocket();
         startPeriodicUpdates();
         startStuckChecker();
         
-        // Update active buttons
         document.querySelectorAll('.btn-tab').forEach(btn => btn.classList.remove('active'));
         const pairBtn = document.getElementById(`btn-${currentPair}`);
         const tfBtn = document.getElementById(`tf-${currentTF}`);
@@ -1074,7 +1120,6 @@
         }, 500);
     }
     
-    // Event listeners
     document.querySelectorAll('[data-pair]').forEach(btn => { 
         btn.onclick = () => { 
             if (currentPair === btn.dataset.pair || isReloading) return; 
@@ -1094,8 +1139,6 @@
     });
     
     setInterval(updateClockAndSession, 1000);
-    
-    // Start application
     fullReload();
 </script>
 </body>
