@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SMC APEX v14.5.0 | URTRADER TERMINAL</title>
+    <title>SMC APEX v14.7.0 | URTRADER TERMINAL</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;800&display=swap');
         
@@ -157,6 +157,12 @@
             font-family: 'JetBrains Mono';
             font-weight: 800;
             font-size: 0.65rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .swing-high:hover, .swing-low:hover {
+            background: rgba(0, 255, 170, 0.1);
+            border-color: var(--accent);
         }
         .swing-high span:first-child, .swing-low span:first-child { color: var(--silver-dark); }
         .swing-high-value, .swing-low-value { color: var(--silver-bright); font-weight: 800; }
@@ -358,8 +364,8 @@
     <div class="terminal-container" id="main-terminal">
         <header class="header">
             <div class="brand-container">
-                <div class="brand">SMC_APEX v14.5.0</div>
-                <div class="meta-label-sub">URTRADER TERMINAL</div>
+                <div class="brand">SMC_APEX v14.7.0</div>
+                <div class="meta-label-sub">URTRADER TERMINAL | OPTIMIZED</div>
             </div>
             <div id="sys-status">
                 <span class="ws-status-dot" id="ws-status-dot"></span>
@@ -390,11 +396,11 @@
                     <span>📊 EMA34</span>
                     <span class="ema34-value" id="ema34-value">--</span>
                 </div>
-                <div class="swing-high" id="swing-high-container">
+                <div class="swing-high" id="swing-high-container" onclick="smartCopy('swing-high-value')">
                     <span>📈 SWING H:</span>
                     <span class="swing-high-value" id="swing-high-value">--</span>
                 </div>
-                <div class="swing-low" id="swing-low-container">
+                <div class="swing-low" id="swing-low-container" onclick="smartCopy('swing-low-value')">
                     <span>📉 SWING L:</span>
                     <span class="swing-low-value" id="swing-low-value">--</span>
                 </div>
@@ -488,6 +494,28 @@
     let mtfData = { m5: "NEUTRAL", m15: "NEUTRAL", h1: "NEUTRAL" };
     
     function getPrecision() { return currentPair === "XAUUSDT" ? 2 : 1; }
+    
+    // ==================== PARAMETER PER PAIR ====================
+    function getSweepBuffer() {
+        // BTCUSD: buffer lebih besar (45 points) untuk mengurangi false sweep
+        // XAUUSD: buffer 0.3 tetap optimal
+        return currentPair === "XAUUSDT" ? 0.3 : 45;
+    }
+    
+    function getSweepCooldown() {
+        // BTCUSD: cooldown lebih panjang (6500ms) untuk filter false signal
+        // XAUUSD: cooldown 5000ms tetap optimal
+        return currentPair === "XAUUSDT" ? 5000 : 6500;
+    }
+    
+    function getFractalLookback() {
+        // BTCUSD: fractal lookback lebih besar (3) untuk filter noise
+        // XAUUSD: fractal lookback dinamis berdasarkan timeframe
+        if (currentPair === "BTCUSDT") return 3;
+        // Untuk XAUUSD, M5=30 menggunakan lookback 2
+        if (currentTF === "5m") return 2;
+        return 3;
+    }
     
     function updateWSStatus(status, message) {
         const wsStatusDot = document.getElementById('ws-status-dot');
@@ -659,16 +687,19 @@
         return ema;
     }
     
+    // MODIFIED: Sweep detection dengan parameter per pair
     function detectLiquiditySweep(price) {
         if (!engine.swingHigh || !engine.swingLow) return false;
-        const buffer = currentPair === "XAUUSDT" ? 0.5 : 50;
+        const buffer = getSweepBuffer();
+        const cooldown = getSweepCooldown();
         const now = Date.now();
-        if (price > engine.swingHigh + buffer && !engine.sweepDetected && now - engine.lastSweepTime > 8000) {
+        
+        if (price > engine.swingHigh + buffer && !engine.sweepDetected && now - engine.lastSweepTime > cooldown) {
             engine.sweepDetected = true; engine.liquiditySide = "SELL"; engine.lastSweepTime = now;
             engine.bosConfirmed = false; engine.fvgEntryActive = false;
             updateLiquidityUI("SWEEP", "SELL"); showAlert("🔥 LIQUIDITY SWEEP | HIGH TAKEN", "sweep");
             return true;
-        } else if (price < engine.swingLow - buffer && !engine.sweepDetected && now - engine.lastSweepTime > 8000) {
+        } else if (price < engine.swingLow - buffer && !engine.sweepDetected && now - engine.lastSweepTime > cooldown) {
             engine.sweepDetected = true; engine.liquiditySide = "BUY"; engine.lastSweepTime = now;
             engine.bosConfirmed = false; engine.fvgEntryActive = false;
             updateLiquidityUI("SWEEP", "BUY"); showAlert("🔥 LIQUIDITY SWEEP | LOW TAKEN", "sweep");
@@ -814,19 +845,22 @@
         else { obElem.innerHTML = "⚡ ORDER BLOCK: No significant OB detected"; obElem.className = "orderblock-status"; }
     }
     
+    // MODIFIED: Lookback + fractal lookback per pair
     function calculateSMCLevels() {
         if (!candleData.length || candleData.length < 30) return;
         
         let lookback;
         switch(currentTF) {
-            case "5m": lookback = 40; break;
-            case "15m": lookback = 50; break;
-            case "1h": lookback = 60; break;
-            default: lookback = 50;
+            case "5m": lookback = 30; break;
+            case "15m": lookback = 55; break;
+            case "1h": lookback = 80; break;
+            default: lookback = 55;
         }
         
         const slice = candleData.slice(-Math.min(candleData.length, lookback));
-        const fractalPoints = detectFractalSwingPoints(slice, 3);
+        // Fractal lookback disesuaikan per pair
+        let fractalLookback = getFractalLookback();
+        const fractalPoints = detectFractalSwingPoints(slice, fractalLookback);
         
         let swingHigh = fractalPoints.swingHigh;
         let swingLow = fractalPoints.swingLow;
@@ -1041,13 +1075,27 @@
     
     window.smartCopy = function(id) {
         let textToCopy = "";
-        if (id === 'mtf-paragraph') { const mtfElem = document.getElementById('mtf-paragraph-text'); if (mtfElem) textToCopy = mtfElem.innerText; }
+        if (id === 'mtf-paragraph') { 
+            const mtfElem = document.getElementById('mtf-paragraph-text'); 
+            if (mtfElem) textToCopy = mtfElem.innerText; 
+        }
         else if (id === 'entry-zone') {
             const r618 = document.getElementById('r618');
             const r79 = document.getElementById('r79');
             if (r618 && r79) textToCopy = `Entry 0.618: ${r618.innerText} | Entry 0.79: ${r79.innerText}`;
         }
-        else { const el = document.getElementById(id); if (el) textToCopy = el.innerText; }
+        else if (id === 'swing-high-value') {
+            const swingHighVal = document.getElementById('swing-high-value');
+            if (swingHighVal) textToCopy = `Swing High: ${swingHighVal.innerText}`;
+        }
+        else if (id === 'swing-low-value') {
+            const swingLowVal = document.getElementById('swing-low-value');
+            if (swingLowVal) textToCopy = `Swing Low: ${swingLowVal.innerText}`;
+        }
+        else { 
+            const el = document.getElementById(id); 
+            if (el) textToCopy = el.innerText; 
+        }
         if (!textToCopy) return;
         navigator.clipboard.writeText(textToCopy);
         const toast = document.getElementById('toastCopy'); 
@@ -1057,7 +1105,10 @@
             setTimeout(() => toast.style.opacity = "0", 1500);
         }
         const targetElem = document.getElementById(id);
-        if (targetElem) { targetElem.classList.add('copied'); setTimeout(() => targetElem.classList.remove('copied'), 300); }
+        if (targetElem) { 
+            targetElem.classList.add('copied'); 
+            setTimeout(() => targetElem.classList.remove('copied'), 300); 
+        }
     };
     
     function updateClockAndSession() {
