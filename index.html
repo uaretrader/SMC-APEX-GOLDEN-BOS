@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SMC APEX v15.3.0 | URTRADER TERMINAL</title>
+    <title>SMC APEX v15.4.0 | URTRADER TERMINAL</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;800&display=swap');
         
@@ -353,10 +353,6 @@
         .syncing { opacity: 0.6; transition: opacity 0.2s; pointer-events: none; }
         .syncing * { pointer-events: none; }
         .copied { color: #fff !important; text-shadow: 0 0 8px var(--accent); transition: 0.1s; }
-        .toast-msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1a1a1a; color: var(--accent); padding: 6px 14px; border-radius: 40px; font-size: 0.7rem; font-family: 'JetBrains Mono'; z-index: 999; pointer-events: none; backdrop-filter: blur(10px); border: 1px solid var(--accent); opacity: 0; transition: opacity 0.2s; }
-        @keyframes pulse { 0% { opacity: 0.5; transform: scale(0.98); } 100% { opacity: 1; transform: scale(1); } }
-        @keyframes flashPrice { 0% { opacity: 0.6; } 100% { opacity: 1; } }
-        .price-flash { animation: flashPrice 0.08s 2; }
     </style>
 </head>
 <body>
@@ -364,7 +360,7 @@
     <div class="terminal-container" id="main-terminal">
         <header class="header">
             <div class="brand-container">
-                <div class="brand">SMC_APEX v15.3.0</div>
+                <div class="brand">SMC_APEX v15.4.0</div>
                 <div class="meta-label-sub">URTRADER TERMINAL</div>
             </div>
             <div id="sys-status">
@@ -433,7 +429,7 @@
                 <span class="data-label" style="color:var(--accent)">ZONA ENTRY</span>
                 <div class="data-val" id="entry-zone">
                     <span id="r618" class="entry-gold">0.00</span><br>
-                    <span id="r79" class="entry-gold">0.00</span>
+                    <span id="r79" class="entry-green">0.00</span>
                 </div>
             </div>
             <div class="data-item" onclick="smartCopy('rTP')">
@@ -441,7 +437,7 @@
                 <span class="data-val" id="rTP" style="color:var(--blue)">0.00</span>
             </div>
             <div class="data-item" onclick="smartCopy('rRange')">
-                <span class="data-label" style="color:var(--accent)">RANGE</span>
+                <span class="data-label" style="color:var(--accent)">RANGE (PIPS)</span>
                 <span class="data-val" id="rRange" style="color:var(--accent)">0.00</span>
             </div>
         </section>
@@ -463,7 +459,6 @@
         </section>
     </div>
 </div>
-<div id="toastCopy" class="toast-msg">✓ Copied to clipboard</div>
 
 <script>
     // ==================== KONFIGURASI & STATE ====================
@@ -479,6 +474,7 @@
     let wsMessageTimeout = null;
     let isManualDisconnect = false;
     let connectionAttempts = 0;
+    let lastStructureUpdateTime = 0;
     
     let engine = { 
         f618: 0, deep: 0, sl: 0, tp: 0, range: 0, bias: "SCANNING",
@@ -578,6 +574,39 @@
         setTimeout(() => { isManualDisconnect = false; }, 100);
     }
     
+    // ==================== STRUKTUR UPDATE OTOMATIS ====================
+    function checkAndUpdateStructure(currentPrice) {
+        if (!candleData.length || candleData.length < 30) return;
+        
+        const now = Date.now();
+        // Cek apakah swing H atau L telah tertembus
+        let structureChanged = false;
+        
+        if (currentPrice > engine.swingHigh && currentPrice > engine.lastSwingHigh) {
+            structureChanged = true;
+        }
+        if (currentPrice < engine.swingLow && currentPrice < engine.lastSwingLow) {
+            structureChanged = true;
+        }
+        
+        // Cek apakah TP tercapai (sudah di handle di checkTPHit, tambahkan trigger update)
+        if (engine.tp !== 0) {
+            const isBullish = engine.bias === "BULLISH_BOS" || engine.bias === "BULLISH";
+            if ((isBullish && currentPrice >= engine.tp) || (!isBullish && currentPrice <= engine.tp)) {
+                if (now - engine.lastTPHitTime > 5000) {
+                    structureChanged = true;
+                    engine.lastTPHitTime = now;
+                }
+            }
+        }
+        
+        // Jika struktur berubah dan sudah cukup waktu dari update terakhir (hindari spam)
+        if (structureChanged && (now - lastStructureUpdateTime) > 3000) {
+            lastStructureUpdateTime = now;
+            forceRecalculateStructure();
+        }
+    }
+    
     // ==================== FRACTAL SWING HIGH/LOW DETECTION ====================
     function detectFractalSwingPoints(data, lookback = 5) {
         if (!data || data.length < lookback * 2 + 1) return { swingHigh: 0, swingLow: Infinity };
@@ -646,7 +675,6 @@
                 }
             }
             
-            // Add current tick
             const lastCandle = data[data.length - 1];
             const currentHigh = Math.max(lastCandle.h, currentPrice);
             const currentLow = Math.min(lastCandle.l, currentPrice);
@@ -669,7 +697,6 @@
             
             if (tr.length < period) return 25;
             
-            // Wilder's Smoothing
             let smoothedTR = 0, smoothedPlusDM = 0, smoothedMinusDM = 0;
             const startIdx = tr.length - period;
             
@@ -694,26 +721,23 @@
         } catch (error) { console.error("ADX Error:", error); return 25; }
     }
     
-    // ==================== RSI Calculation (Sinkron dengan MT5) ====================
+    // ==================== RSI Calculation ====================
     function computeRSI(currentPrice) {
         if (!candleData.length || candleData.length < 20) return 50;
         
         const period = 14;
         
-        // Kumpulkan close prices dari candle (sama seperti MT5)
         let closes = [];
         for (let i = 0; i < candleData.length; i++) {
             closes.push(candleData[i].c);
         }
         
-        // Tambahkan harga saat ini sebagai close terbaru
         if (closes.length > 0 && currentPrice !== closes[closes.length - 1]) {
             closes.push(currentPrice);
         }
         
         if (closes.length < period + 1) return 50;
         
-        // Hitung perubahan harga (gain/loss)
         let gains = [];
         let losses = [];
         
@@ -728,8 +752,6 @@
             }
         }
         
-        // Wilder's Smoothing - sama seperti MT5
-        // Pertama, hitung rata-rata gain/loss untuk periode awal
         let avgGain = 0;
         let avgLoss = 0;
         
@@ -741,18 +763,15 @@
         avgGain /= period;
         avgLoss /= period;
         
-        // Smoothing untuk data selanjutnya (Wilder's method)
         for (let i = period; i < gains.length; i++) {
             avgGain = ((avgGain * (period - 1)) + gains[i]) / period;
             avgLoss = ((avgLoss * (period - 1)) + losses[i]) / period;
         }
         
-        // Hitung RS dan RSI
         if (avgLoss === 0) return 100;
         const rs = avgGain / avgLoss;
         const rsi = 100 - (100 / (1 + rs));
         
-        // Batasi range 0-100
         return Math.min(100, Math.max(0, rsi));
     }
     
@@ -777,12 +796,12 @@
         if (price > engine.swingHigh + buffer && !engine.sweepDetected && now - engine.lastSweepTime > cooldown) {
             engine.sweepDetected = true; engine.liquiditySide = "SELL"; engine.lastSweepTime = now;
             engine.bosConfirmed = false; engine.fvgEntryActive = false;
-            updateLiquidityUI("SWEEP", "SELL"); showAlert("🔥 LIQUIDITY SWEEP | HIGH TAKEN", "sweep");
+            updateLiquidityUI("SWEEP", "SELL");
             return true;
         } else if (price < engine.swingLow - buffer && !engine.sweepDetected && now - engine.lastSweepTime > cooldown) {
             engine.sweepDetected = true; engine.liquiditySide = "BUY"; engine.lastSweepTime = now;
             engine.bosConfirmed = false; engine.fvgEntryActive = false;
-            updateLiquidityUI("SWEEP", "BUY"); showAlert("🔥 LIQUIDITY SWEEP | LOW TAKEN", "sweep");
+            updateLiquidityUI("SWEEP", "BUY");
             return true;
         }
         return false;
@@ -794,12 +813,12 @@
         if (engine.liquiditySide === "BUY" && currentPrice > engine.swingHigh) {
             engine.bosConfirmed = true; engine.bias = "BULLISH_BOS"; engine.lastBosTime = now;
             engine.fvgEntryActive = true; updateLiquidityUI("BOS", "BULLISH");
-            highlightFVGEntry(); showAlert("✅ BOS CONFIRMED | BULLISH", "bos");
+            highlightFVGEntry();
             return true;
         } else if (engine.liquiditySide === "SELL" && currentPrice < engine.swingLow) {
             engine.bosConfirmed = true; engine.bias = "BEARISH_BOS"; engine.lastBosTime = now;
             engine.fvgEntryActive = true; updateLiquidityUI("BOS", "BEARISH");
-            highlightFVGEntry(); showAlert("✅ BOS CONFIRMED | BEARISH", "bos");
+            highlightFVGEntry();
             return true;
         }
         return false;
@@ -830,12 +849,63 @@
         }
     }
     
+    // ==================== UPDATE FVG DENGAN INSTRUKSI ENTRY ====================
     function updateEntryZoneUI() {
         const fvgElem = document.getElementById('fvg-status');
         if (!fvgElem) return;
-        if (engine.bosConfirmed && engine.fvgEntryActive) { fvgElem.innerHTML = "📈 ENTRY ZONE: FVG"; fvgElem.style.color = "var(--accent)"; }
-        else if (engine.sweepDetected && !engine.bosConfirmed) { fvgElem.innerHTML = "🎯 WAITING BOS"; fvgElem.style.color = "var(--orange)"; }
-        else { const isBullish = engine.bias === "BULLISH" || engine.bias === "BULLISH_BOS"; fvgElem.innerHTML = isBullish ? "FVG: BULL IMBALANCE" : "FVG: BEAR IMBALANCE"; fvgElem.style.color = isBullish ? "var(--accent)" : "var(--danger)"; }
+        
+        const currentPrice = lastPrice;
+        const isBullish = engine.bias === "BULLISH" || engine.bias === "BULLISH_BOS";
+        const entryZoneLow = Math.min(engine.f618, engine.deep);
+        const entryZoneHigh = Math.max(engine.f618, engine.deep);
+        const isPriceInZone = currentPrice >= entryZoneLow && currentPrice <= entryZoneHigh;
+        const isTrendStrong = engine.adx > 25;
+        const isSweepActive = engine.sweepDetected && !engine.bosConfirmed;
+        
+        // Logika instruksi entry
+        if (engine.bosConfirmed && engine.fvgEntryActive && isPriceInZone && isTrendStrong) {
+            if (isBullish) {
+                fvgElem.innerHTML = "🚀 BUY NOW! 🔥";
+                fvgElem.style.color = "var(--accent)";
+                fvgElem.style.background = "rgba(0, 255, 170, 0.2)";
+                fvgElem.style.animation = "pulse 0.5s ease";
+                setTimeout(() => { if (fvgElem) fvgElem.style.animation = ""; }, 500);
+            } else {
+                fvgElem.innerHTML = "🔻 SELL NOW! 🔥";
+                fvgElem.style.color = "var(--orange)";
+                fvgElem.style.background = "rgba(255, 136, 77, 0.2)";
+                fvgElem.style.animation = "pulse 0.5s ease";
+                setTimeout(() => { if (fvgElem) fvgElem.style.animation = ""; }, 500);
+            }
+        }
+        else if (engine.bosConfirmed && engine.fvgEntryActive) {
+            fvgElem.innerHTML = "📈 ENTRY ZONE: FVG";
+            fvgElem.style.color = "var(--accent)";
+            fvgElem.style.background = "";
+        }
+        else if (engine.sweepDetected && !engine.bosConfirmed) {
+            fvgElem.innerHTML = "🎯 WAITING BOS";
+            fvgElem.style.color = "var(--orange)";
+            fvgElem.style.background = "";
+        }
+        else if (isSweepActive && isPriceInZone && isTrendStrong) {
+            // Kondisi: sudah sweep, harga di zona, tapi belum BOS - ini juga area entry potensial
+            if (isBullish) {
+                fvgElem.innerHTML = "🚀 BUY NOW! 🔥 (SWEEP)";
+                fvgElem.style.color = "var(--accent)";
+                fvgElem.style.background = "rgba(0, 255, 170, 0.2)";
+            } else {
+                fvgElem.innerHTML = "🔻 SELL NOW! 🔥 (SWEEP)";
+                fvgElem.style.color = "var(--orange)";
+                fvgElem.style.background = "rgba(255, 136, 77, 0.2)";
+            }
+        }
+        else {
+            const isBullishBias = engine.bias === "BULLISH" || engine.bias === "BULLISH_BOS";
+            fvgElem.innerHTML = isBullishBias ? "FVG: BULL IMBALANCE" : "FVG: BEAR IMBALANCE";
+            fvgElem.style.color = isBullishBias ? "var(--accent)" : "var(--danger)";
+            fvgElem.style.background = "";
+        }
     }
     
     function updateADXUI(adxValue) {
@@ -881,7 +951,6 @@
         engine.fvgEntryActive = true; updateEntryZoneUI();
         const fvgElements = ['r618', 'r79'];
         fvgElements.forEach(id => { const el = document.getElementById(id); if (el) { el.classList.add('fvg-highlight'); setTimeout(() => el.classList.remove('fvg-highlight'), 2000); } });
-        showAlert("📈 ENTRY ZONE ACTIVE!", "entry");
     }
     
     function updateMTFPargraph() {
@@ -997,14 +1066,19 @@
             engine.lastTPHitTime = Date.now();
             engine.sweepDetected = false; engine.bosConfirmed = false; engine.liquiditySide = null; engine.fvgEntryActive = false;
             updateLiquidityUI("RESET", null); updateEntryZoneUI();
-            if (candleData.length) forceRecalculateStructure();
-            showAlert("✅ TP TARGET HIT!", "tp"); return true;
+            return true;
         }
         return false;
     }
     
     function forceRecalculateStructure() {
         if (!candleData.length || candleData.length < 30) return;
+        // Reset BOS dan sweep state untuk struktur baru
+        engine.sweepDetected = false;
+        engine.bosConfirmed = false;
+        engine.liquiditySide = null;
+        engine.fvgEntryActive = false;
+        updateLiquidityUI("RESET", null);
         calculateSMCLevels();
         if (lastPrice > 0) updateUI(lastPrice);
     }
@@ -1054,7 +1128,12 @@
             else { biasDisplay.innerHTML = engine.bias === "BULLISH" ? "PREMIUM ZONE" : "DISCOUNT ZONE"; biasDisplay.style.color = engine.bias === "BULLISH" ? "var(--accent)" : "var(--danger)"; }
         }
         
-        updateEntryZoneUI(); checkTPHit(currentPrice);
+        updateEntryZoneUI(); 
+        checkTPHit(currentPrice);
+        
+        // Auto update struktur jika swing tertembus
+        checkAndUpdateStructure(currentPrice);
+        
         lastPrice = currentPrice;
     }
     
@@ -1136,16 +1215,6 @@
         }, 5000); 
     }
     
-    function showAlert(message, type) {
-        const toast = document.getElementById('toastCopy');
-        if (!toast) return;
-        toast.innerText = message;
-        toast.style.borderColor = type === "sweep" ? "var(--orange)" : (type === "tp" ? "var(--blue)" : "var(--accent)");
-        toast.style.color = type === "sweep" ? "var(--orange)" : (type === "tp" ? "var(--blue)" : "var(--accent)");
-        toast.style.opacity = "1";
-        setTimeout(() => { toast.style.opacity = "0"; }, 2500);
-    }
-    
     window.smartCopy = function(id) {
         let textToCopy = "";
         if (id === 'mtf-paragraph') { 
@@ -1171,12 +1240,6 @@
         }
         if (!textToCopy) return;
         navigator.clipboard.writeText(textToCopy);
-        const toast = document.getElementById('toastCopy'); 
-        if (toast) {
-            toast.innerText = "✓ Copied to clipboard"; 
-            toast.style.opacity = "1";
-            setTimeout(() => toast.style.opacity = "0", 1500);
-        }
         const targetElem = document.getElementById(id);
         if (targetElem) { 
             targetElem.classList.add('copied'); 
