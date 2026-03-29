@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SMC APEX v15.4.0 | URTRADER TERMINAL</title>
+    <title>SMC APEX v15.5.0 | URTRADER TERMINAL</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;800&display=swap');
         
@@ -178,31 +178,6 @@
         }
         #pattern-val { font-weight: 800; transition: all 0.2s; }
         
-        .liquidity-status {
-            background: rgba(0,0,0,0.6);
-            padding: 4px 12px;
-            border-radius: 20px;
-            border: 1px solid var(--gold-dim);
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-        }
-        .liquidity-status.sweep {
-            border-color: var(--orange);
-            color: var(--orange);
-            animation: pulse 0.5s ease;
-            background: rgba(255, 136, 77, 0.15);
-            padding: 4px 16px;
-        }
-        .liquidity-status.bos {
-            border-color: var(--accent);
-            color: var(--accent);
-            background: rgba(0, 255, 170, 0.15);
-            padding: 4px 16px;
-        }
-        
         .rsi-panel {
             margin-top: 16px;
             margin-bottom: 12px;
@@ -301,7 +276,7 @@
         
         @media (max-width: 700px) {
             .hero-meta-row { gap: 8px; }
-            .adx-status, .ema34-status, .swing-high, .swing-low, .meta-fvg, .meta-bias, .liquidity-status {
+            .adx-status, .ema34-status, .swing-high, .swing-low, .meta-fvg, .meta-bias {
                 font-size: 0.55rem;
                 padding: 3px 10px;
             }
@@ -360,7 +335,7 @@
     <div class="terminal-container" id="main-terminal">
         <header class="header">
             <div class="brand-container">
-                <div class="brand">SMC_APEX v15.4.0</div>
+                <div class="brand">SMC_APEX v15.5.0</div>
                 <div class="meta-label-sub">URTRADER TERMINAL</div>
             </div>
             <div id="sys-status">
@@ -402,7 +377,6 @@
                 </div>
                 <div class="meta-fvg" id="fvg-status">FVG: ACTIVE</div>
                 <div class="meta-bias">BIAS: <span id="pattern-val">SCANNING</span></div>
-                <div class="liquidity-status" id="liquidity-status">⚡ AWAITING SWEEP</div>
             </div>
             <div id="live-price" onclick="smartCopy('live-price')">0.00</div>
             
@@ -429,7 +403,7 @@
                 <span class="data-label" style="color:var(--accent)">ZONA ENTRY</span>
                 <div class="data-val" id="entry-zone">
                     <span id="r618" class="entry-gold">0.00</span><br>
-                    <span id="r79" class="entry-green">0.00</span>
+                    <span id="r79" class="entry-gold">0.00</span>
                 </div>
             </div>
             <div class="data-item" onclick="smartCopy('rTP')">
@@ -437,7 +411,7 @@
                 <span class="data-val" id="rTP" style="color:var(--blue)">0.00</span>
             </div>
             <div class="data-item" onclick="smartCopy('rRange')">
-                <span class="data-label" style="color:var(--accent)">RANGE (PIPS)</span>
+                <span class="data-label" style="color:var(--accent)">RANGE</span>
                 <span class="data-val" id="rRange" style="color:var(--accent)">0.00</span>
             </div>
         </section>
@@ -579,7 +553,6 @@
         if (!candleData.length || candleData.length < 30) return;
         
         const now = Date.now();
-        // Cek apakah swing H atau L telah tertembus
         let structureChanged = false;
         
         if (currentPrice > engine.swingHigh && currentPrice > engine.lastSwingHigh) {
@@ -589,7 +562,6 @@
             structureChanged = true;
         }
         
-        // Cek apakah TP tercapai (sudah di handle di checkTPHit, tambahkan trigger update)
         if (engine.tp !== 0) {
             const isBullish = engine.bias === "BULLISH_BOS" || engine.bias === "BULLISH";
             if ((isBullish && currentPrice >= engine.tp) || (!isBullish && currentPrice <= engine.tp)) {
@@ -600,7 +572,6 @@
             }
         }
         
-        // Jika struktur berubah dan sudah cukup waktu dari update terakhir (hindari spam)
         if (structureChanged && (now - lastStructureUpdateTime) > 3000) {
             lastStructureUpdateTime = now;
             forceRecalculateStructure();
@@ -796,12 +767,10 @@
         if (price > engine.swingHigh + buffer && !engine.sweepDetected && now - engine.lastSweepTime > cooldown) {
             engine.sweepDetected = true; engine.liquiditySide = "SELL"; engine.lastSweepTime = now;
             engine.bosConfirmed = false; engine.fvgEntryActive = false;
-            updateLiquidityUI("SWEEP", "SELL");
             return true;
         } else if (price < engine.swingLow - buffer && !engine.sweepDetected && now - engine.lastSweepTime > cooldown) {
             engine.sweepDetected = true; engine.liquiditySide = "BUY"; engine.lastSweepTime = now;
             engine.bosConfirmed = false; engine.fvgEntryActive = false;
-            updateLiquidityUI("SWEEP", "BUY");
             return true;
         }
         return false;
@@ -812,12 +781,12 @@
         const now = Date.now();
         if (engine.liquiditySide === "BUY" && currentPrice > engine.swingHigh) {
             engine.bosConfirmed = true; engine.bias = "BULLISH_BOS"; engine.lastBosTime = now;
-            engine.fvgEntryActive = true; updateLiquidityUI("BOS", "BULLISH");
+            engine.fvgEntryActive = true;
             highlightFVGEntry();
             return true;
         } else if (engine.liquiditySide === "SELL" && currentPrice < engine.swingLow) {
             engine.bosConfirmed = true; engine.bias = "BEARISH_BOS"; engine.lastBosTime = now;
-            engine.fvgEntryActive = true; updateLiquidityUI("BOS", "BEARISH");
+            engine.fvgEntryActive = true;
             highlightFVGEntry();
             return true;
         }
@@ -828,24 +797,8 @@
         if (engine.swingHigh !== engine.lastSwingHigh || engine.swingLow !== engine.lastSwingLow) {
             if (engine.sweepDetected && !engine.bosConfirmed) {
                 engine.sweepDetected = false; engine.liquiditySide = null; engine.fvgEntryActive = false;
-                updateLiquidityUI("RESET", null);
             }
             engine.lastSwingHigh = engine.swingHigh; engine.lastSwingLow = engine.swingLow;
-        }
-    }
-    
-    function updateLiquidityUI(status, side) {
-        const elem = document.getElementById('liquidity-status');
-        if (!elem) return;
-        if (status === "SWEEP") {
-            elem.innerHTML = side === "BUY" ? "🔥 SWEEP DETECTED | BEAR TRAP" : "🔥 SWEEP DETECTED | BULL TRAP";
-            elem.className = "liquidity-status sweep";
-        } else if (status === "BOS") {
-            elem.innerHTML = side === "BULLISH" ? "✅ BOS CONFIRMED | BULLISH" : "✅ BOS CONFIRMED | BEARISH";
-            elem.className = "liquidity-status bos";
-        } else {
-            elem.innerHTML = "⚡ AWAITING SWEEP";
-            elem.className = "liquidity-status";
         }
     }
     
@@ -889,7 +842,6 @@
             fvgElem.style.background = "";
         }
         else if (isSweepActive && isPriceInZone && isTrendStrong) {
-            // Kondisi: sudah sweep, harga di zona, tapi belum BOS - ini juga area entry potensial
             if (isBullish) {
                 fvgElem.innerHTML = "🚀 BUY NOW! 🔥 (SWEEP)";
                 fvgElem.style.color = "var(--accent)";
@@ -1065,7 +1017,7 @@
         if (tpHit && (Date.now() - engine.lastTPHitTime) > 10000) {
             engine.lastTPHitTime = Date.now();
             engine.sweepDetected = false; engine.bosConfirmed = false; engine.liquiditySide = null; engine.fvgEntryActive = false;
-            updateLiquidityUI("RESET", null); updateEntryZoneUI();
+            updateEntryZoneUI();
             return true;
         }
         return false;
@@ -1073,12 +1025,10 @@
     
     function forceRecalculateStructure() {
         if (!candleData.length || candleData.length < 30) return;
-        // Reset BOS dan sweep state untuk struktur baru
         engine.sweepDetected = false;
         engine.bosConfirmed = false;
         engine.liquiditySide = null;
         engine.fvgEntryActive = false;
-        updateLiquidityUI("RESET", null);
         calculateSMCLevels();
         if (lastPrice > 0) updateUI(lastPrice);
     }
@@ -1130,8 +1080,6 @@
         
         updateEntryZoneUI(); 
         checkTPHit(currentPrice);
-        
-        // Auto update struktur jika swing tertembus
         checkAndUpdateStructure(currentPrice);
         
         lastPrice = currentPrice;
@@ -1284,7 +1232,6 @@
         engine.bosConfirmed = false; 
         engine.liquiditySide = null; 
         engine.fvgEntryActive = false;
-        updateLiquidityUI("RESET", null); 
         updateEntryZoneUI();
         updateWSStatus('connecting', 'LOADING');
         
