@@ -983,13 +983,13 @@
         if (isBullish) {
             engine.f618 = swingLow + (range * 0.618);
             engine.deep = swingLow + (range * 0.79);
-            engine.tp = swingHigh + (range * 0.23);
+            engine.tp = swingHigh + (range * 0.21);
             const distanceFromEntryToDeep = Math.abs(engine.deep - engine.f618);
             engine.sl = engine.f618 - (distanceFromEntryToDeep * 1);
         } else {
             engine.f618 = swingHigh - (range * 0.618);
             engine.deep = swingHigh - (range * 0.79);
-            engine.tp = swingLow - (range * 0.23);
+            engine.tp = swingLow - (range * 0.21);
             const distanceFromEntryToDeep = Math.abs(engine.f618 - engine.deep);
             engine.sl = engine.f618 + (distanceFromEntryToDeep * 1);
         }
